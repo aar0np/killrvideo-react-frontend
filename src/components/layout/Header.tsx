@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, User, Settings, LogOut } from 'lucide-react';
+import { Search, User, Settings, LogOut, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -47,9 +47,10 @@ const Header = () => {
           <nav className="flex items-center space-x-4">
             {isAuthenticated ? (
               <>
-                <Link to="/upload">
+                <Link to="/creator">
                   <Button variant="outline" size="sm" className="font-noto">
-                    Upload
+                    <Upload className="w-4 h-4 mr-1" />
+                    Creator
                   </Button>
                 </Link>
                 <DropdownMenu>
@@ -58,7 +59,7 @@ const Header = () => {
                       <User className="w-4 h-4" />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-48 bg-white border shadow-lg">
+                  <DropdownMenuContent align="end" className="w-48 bg-white border shadow-lg z-50">
                     <DropdownMenuItem>
                       <User className="w-4 h-4 mr-2" />
                       Profile
