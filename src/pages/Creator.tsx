@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Eye, Star, Upload, TrendingUp } from 'lucide-react';
 import { useSubmitVideo, useProfile, useVideosByUser } from '@/hooks/useApi';
 import { useToast } from '@/hooks/use-toast';
+import { Video, User } from '@/types/api';
 
 const Creator = () => {
   const [uploadForm, setUploadForm] = useState({
@@ -19,7 +20,7 @@ const Creator = () => {
   });
 
   const { data: profile } = useProfile();
-  const { data: userVideos, isLoading: videosLoading } = useVideosByUser(profile?.id || '');
+  const { data: userVideos, isLoading: videosLoading } = useVideosByUser((profile as User)?.id || '');
   const submitVideoMutation = useSubmitVideo();
   const { toast } = useToast();
 
@@ -63,14 +64,16 @@ const Creator = () => {
     return num.toString();
   };
 
+  const videos = (userVideos as Video[]) || [];
+
   const getTotalViews = () => {
-    return userVideos?.reduce((total: number, video: any) => total + video.views, 0) || 0;
+    return videos.reduce((total: number, video: Video) => total + video.views, 0);
   };
 
   const getAverageRating = () => {
-    if (!userVideos?.length) return 0;
-    const totalRating = userVideos.reduce((total: number, video: any) => total + video.rating, 0);
-    return (totalRating / userVideos.length).toFixed(1);
+    if (!videos.length) return 0;
+    const totalRating = videos.reduce((total: number, video: Video) => total + video.rating, 0);
+    return (totalRating / videos.length).toFixed(1);
   };
 
   return (
@@ -170,9 +173,9 @@ const Creator = () => {
                   <div className="text-center py-8 font-noto text-gray-600">
                     Loading your videos...
                   </div>
-                ) : userVideos?.length ? (
+                ) : videos.length ? (
                   <div className="space-y-4">
-                    {userVideos.map((video: any) => (
+                    {videos.map((video: Video) => (
                       <div key={video.id} className="flex items-center justify-between p-4 border rounded-lg">
                         <div className="flex-1">
                           <h3 className="font-sora font-semibold text-gray-900 mb-1">
@@ -247,7 +250,7 @@ const Creator = () => {
                   <div>
                     <div className="font-noto text-sm text-gray-600">Videos Published</div>
                     <div className="font-sora text-2xl font-bold text-gray-900">
-                      {userVideos?.filter((v: any) => v.status === 'published').length || 0}
+                      {videos.filter((v: Video) => v.status === 'published').length}
                     </div>
                   </div>
                 </div>
