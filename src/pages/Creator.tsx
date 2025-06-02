@@ -7,26 +7,8 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Eye, Star, Upload, TrendingUp } from 'lucide-react';
-
-// Mock data for creator's videos
-const creatorVideos = [
-  {
-    id: '1',
-    title: 'Building Scalable Microservices',
-    views: 125000,
-    rating: 4.8,
-    status: 'published',
-    uploadDate: '2024-01-15'
-  },
-  {
-    id: '2',
-    title: 'React Performance Tips',
-    views: 89000,
-    rating: 4.6,
-    status: 'published', 
-    uploadDate: '2024-01-10'
-  }
-];
+import { useSubmitVideo, useProfile, useVideosByUser } from '@/hooks/useApi';
+import { useToast } from '@/hooks/use-toast';
 
 const Creator = () => {
   const [uploadForm, setUploadForm] = useState({
@@ -36,16 +18,59 @@ const Creator = () => {
     tags: ''
   });
 
-  const handleUpload = (e: React.FormEvent) => {
+  const { data: profile } = useProfile();
+  const { data: userVideos, isLoading: videosLoading } = useVideosByUser(profile?.id || '');
+  const submitVideoMutation = useSubmitVideo();
+  const { toast } = useToast();
+
+  const handleUpload = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Upload video:', uploadForm);
-    // TODO: Implement upload logic
+    
+    try {
+      const videoData = {
+        title: uploadForm.title,
+        description: uploadForm.description,
+        youtubeUrl: uploadForm.youtubeUrl,
+        tags: uploadForm.tags.split(',').map(tag => tag.trim()).filter(Boolean),
+      };
+
+      await submitVideoMutation.mutateAsync(videoData);
+      
+      toast({
+        title: "Video uploaded successfully!",
+        description: "Your video is being processed and will be available soon.",
+      });
+
+      // Reset form
+      setUploadForm({
+        title: '',
+        youtubeUrl: '',
+        description: '',
+        tags: ''
+      });
+    } catch (error: any) {
+      toast({
+        title: "Upload failed",
+        description: error.detail || "Failed to upload video. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const formatViews = (num: number) => {
     if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
     if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
     return num.toString();
+  };
+
+  const getTotalViews = () => {
+    return userVideos?.reduce((total: number, video: any) => total + video.views, 0) || 0;
+  };
+
+  const getAverageRating = () => {
+    if (!userVideos?.length) return 0;
+    const totalRating = userVideos.reduce((total: number, video: any) => total + video.rating, 0);
+    return (totalRating / userVideos.length).toFixed(1);
   };
 
   return (
@@ -121,8 +146,12 @@ const Creator = () => {
                       className="font-noto"
                     />
                   </div>
-                  <Button type="submit" className="bg-primary hover:bg-purple-800 font-noto">
-                    Upload Video
+                  <Button 
+                    type="submit" 
+                    className="bg-primary hover:bg-purple-800 font-noto"
+                    disabled={submitVideoMutation.isPending}
+                  >
+                    {submitVideoMutation.isPending ? 'Uploading...' : 'Upload Video'}
                   </Button>
                 </form>
               </CardContent>
@@ -137,38 +166,57 @@ const Creator = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {creatorVideos.map((video) => (
-                    <div key={video.id} className="flex items-center justify-between p-4 border rounded-lg">
-                      <div className="flex-1">
-                        <h3 className="font-sora font-semibold text-gray-900 mb-1">
-                          {video.title}
-                        </h3>
-                        <div className="flex items-center space-x-4 text-sm text-gray-600 font-noto">
-                          <span className="flex items-center">
-                            <Eye className="w-4 h-4 mr-1" />
-                            {formatViews(video.views)} views
-                          </span>
-                          <span className="flex items-center">
-                            <Star className="w-4 h-4 mr-1 fill-accent text-accent" />
-                            {video.rating.toFixed(1)}
-                          </span>
-                          <span>
-                            {new Date(video.uploadDate).toLocaleDateString()}
-                          </span>
+                {videosLoading ? (
+                  <div className="text-center py-8 font-noto text-gray-600">
+                    Loading your videos...
+                  </div>
+                ) : userVideos?.length ? (
+                  <div className="space-y-4">
+                    {userVideos.map((video: any) => (
+                      <div key={video.id} className="flex items-center justify-between p-4 border rounded-lg">
+                        <div className="flex-1">
+                          <h3 className="font-sora font-semibold text-gray-900 mb-1">
+                            {video.title}
+                          </h3>
+                          <div className="flex items-center space-x-4 text-sm text-gray-600 font-noto">
+                            <span className="flex items-center">
+                              <Eye className="w-4 h-4 mr-1" />
+                              {formatViews(video.views)} views
+                            </span>
+                            <span className="flex items-center">
+                              <Star className="w-4 h-4 mr-1 fill-accent text-accent" />
+                              {video.rating.toFixed(1)}
+                            </span>
+                            <span>
+                              {new Date(video.uploadDate).toLocaleDateString()}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Badge 
+                            variant="secondary" 
+                            className={
+                              video.status === 'published' 
+                                ? 'bg-green-100 text-green-800'
+                                : video.status === 'pending'
+                                ? 'bg-yellow-100 text-yellow-800'
+                                : 'bg-red-100 text-red-800'
+                            }
+                          >
+                            {video.status}
+                          </Badge>
+                          <Button variant="outline" size="sm">
+                            Edit
+                          </Button>
                         </div>
                       </div>
-                      <div className="flex items-center space-x-2">
-                        <Badge variant="secondary" className="bg-green-100 text-green-800">
-                          {video.status}
-                        </Badge>
-                        <Button variant="outline" size="sm">
-                          Edit
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 font-noto text-gray-600">
+                    No videos uploaded yet. Upload your first video above!
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -186,15 +234,21 @@ const Creator = () => {
                 <div className="space-y-4">
                   <div>
                     <div className="font-noto text-sm text-gray-600">Total Views</div>
-                    <div className="font-sora text-2xl font-bold text-gray-900">214K</div>
+                    <div className="font-sora text-2xl font-bold text-gray-900">
+                      {formatViews(getTotalViews())}
+                    </div>
                   </div>
                   <div>
                     <div className="font-noto text-sm text-gray-600">Average Rating</div>
-                    <div className="font-sora text-2xl font-bold text-gray-900">4.7</div>
+                    <div className="font-sora text-2xl font-bold text-gray-900">
+                      {getAverageRating()}
+                    </div>
                   </div>
                   <div>
                     <div className="font-noto text-sm text-gray-600">Videos Published</div>
-                    <div className="font-sora text-2xl font-bold text-gray-900">2</div>
+                    <div className="font-sora text-2xl font-bold text-gray-900">
+                      {userVideos?.filter((v: any) => v.status === 'published').length || 0}
+                    </div>
                   </div>
                 </div>
               </CardContent>
