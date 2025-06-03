@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Search, User, Settings, LogOut, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,10 +11,38 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { useProfile } from '@/hooks/useApi';
+import { apiClient } from '@/lib/api';
+import { useToast } from '@/hooks/use-toast';
+import { User as UserType } from '@/types/api';
 
 const Header = () => {
   const [searchQuery, setSearchQuery] = useState('');
-  const isAuthenticated = false; // TODO: Replace with actual auth state
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  
+  const { data: profile, isLoading } = useProfile();
+  const user = profile as UserType;
+  const isAuthenticated = !!user && !isLoading;
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      // TODO: Implement search navigation
+      console.log('Searching for:', searchQuery);
+    }
+  };
+
+  const handleSignOut = () => {
+    apiClient.clearToken();
+    toast({
+      title: "Signed out",
+      description: "You have been successfully signed out.",
+    });
+    navigate('/');
+    // Force page reload to clear any cached data
+    window.location.reload();
+  };
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80">
@@ -33,14 +61,16 @@ const Header = () => {
 
           {/* Search Bar */}
           <div className="flex-1 max-w-xl mx-4 relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-            <Input
-              type="text"
-              placeholder="Search videos, creators, tags..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 pr-4 py-2 w-full font-noto"
-            />
+            <form onSubmit={handleSearch}>
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <Input
+                type="text"
+                placeholder="Search videos, creators, tags..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 pr-4 py-2 w-full font-noto"
+              />
+            </form>
           </div>
 
           {/* Navigation */}
@@ -57,6 +87,9 @@ const Header = () => {
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="sm" className="relative">
                       <User className="w-4 h-4" />
+                      {user?.username && (
+                        <span className="ml-2 font-noto">{user.username}</span>
+                      )}
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-48 bg-white border shadow-lg z-50">
@@ -69,7 +102,7 @@ const Header = () => {
                       Settings
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleSignOut}>
                       <LogOut className="w-4 h-4 mr-2" />
                       Sign Out
                     </DropdownMenuItem>

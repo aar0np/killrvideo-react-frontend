@@ -1,11 +1,13 @@
 
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useLogin, useRegister } from '@/hooks/useApi';
+import { useToast } from '@/hooks/use-toast';
 
 const Auth = () => {
   const [loginForm, setLoginForm] = useState({ email: '', password: '' });
@@ -16,16 +18,67 @@ const Auth = () => {
     username: '' 
   });
 
-  const handleLogin = (e: React.FormEvent) => {
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const loginMutation = useLogin();
+  const registerMutation = useRegister();
+
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Login:', loginForm);
-    // TODO: Implement login logic
+    
+    try {
+      await loginMutation.mutateAsync({
+        email: loginForm.email,
+        password: loginForm.password,
+      });
+      
+      toast({
+        title: "Welcome back!",
+        description: "You have been successfully logged in.",
+      });
+      
+      navigate('/');
+    } catch (error: any) {
+      toast({
+        title: "Login failed",
+        description: error.detail || "Invalid email or password. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleSignup = (e: React.FormEvent) => {
+  const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Signup:', signupForm);
-    // TODO: Implement signup logic
+    
+    if (signupForm.password !== signupForm.confirmPassword) {
+      toast({
+        title: "Password mismatch",
+        description: "Passwords do not match. Please try again.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    try {
+      await registerMutation.mutateAsync({
+        username: signupForm.username,
+        email: signupForm.email,
+        password: signupForm.password,
+      });
+      
+      toast({
+        title: "Account created!",
+        description: "Your account has been created successfully. Welcome to KillrVideo!",
+      });
+      
+      navigate('/');
+    } catch (error: any) {
+      toast({
+        title: "Registration failed",
+        description: error.detail || "Failed to create account. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -91,8 +144,12 @@ const Auth = () => {
                       className="font-noto"
                     />
                   </div>
-                  <Button type="submit" className="w-full bg-primary hover:bg-purple-800 font-noto">
-                    Sign In
+                  <Button 
+                    type="submit" 
+                    className="w-full bg-primary hover:bg-purple-800 font-noto"
+                    disabled={loginMutation.isPending}
+                  >
+                    {loginMutation.isPending ? 'Signing In...' : 'Sign In'}
                   </Button>
                 </form>
               </TabsContent>
@@ -147,8 +204,12 @@ const Auth = () => {
                       className="font-noto"
                     />
                   </div>
-                  <Button type="submit" className="w-full bg-primary hover:bg-purple-800 font-noto">
-                    Create Account
+                  <Button 
+                    type="submit" 
+                    className="w-full bg-primary hover:bg-purple-800 font-noto"
+                    disabled={registerMutation.isPending}
+                  >
+                    {registerMutation.isPending ? 'Creating Account...' : 'Create Account'}
                   </Button>
                 </form>
               </TabsContent>
