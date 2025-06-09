@@ -16,9 +16,12 @@ export default function UserManagement() {
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const navigate = useNavigate();
 
-  const { data: users, isLoading } = useSearchUsers(debouncedQuery);
+  const { data: usersData, isLoading } = useSearchUsers(debouncedQuery);
   const assignModeratorMutation = useAssignModerator();
   const revokeModeratorMutation = useRevokeModerator();
+
+  // Type the users data properly
+  const users = (usersData as User[]) || [];
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -84,7 +87,7 @@ export default function UserManagement() {
         </Card>
 
         <div className="grid gap-4">
-          {users?.map((user: User) => (
+          {users.map((user: User) => (
             <Card key={user.userId}>
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
@@ -136,7 +139,7 @@ export default function UserManagement() {
             </Card>
           ))}
 
-          {users?.length === 0 && debouncedQuery && (
+          {users.length === 0 && debouncedQuery && (
             <Card>
               <CardContent className="text-center py-8">
                 <Search className="h-12 w-12 text-muted-foreground mx-auto mb-4" />

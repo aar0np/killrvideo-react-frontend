@@ -13,8 +13,8 @@ import { toast } from 'sonner';
 import Layout from '@/components/layout/Layout';
 
 export default function Moderation() {
-  const [statusFilter, setStatusFilter] = useState<string>('');
-  const { data: flagsData, isLoading } = useModerationFlags(statusFilter || undefined);
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const { data: flagsData, isLoading } = useModerationFlags(statusFilter === 'all' ? undefined : statusFilter);
   const actionFlagMutation = useActionFlag();
 
   const handleFlagAction = async (flagId: string, status: string, moderatorNotes?: string) => {
@@ -88,7 +88,7 @@ export default function Moderation() {
                     <SelectValue placeholder="Filter by status" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All statuses</SelectItem>
+                    <SelectItem value="all">All statuses</SelectItem>
                     <SelectItem value="open">Open</SelectItem>
                     <SelectItem value="under_review">Under Review</SelectItem>
                     <SelectItem value="approved">Approved</SelectItem>
@@ -99,7 +99,7 @@ export default function Moderation() {
             </div>
 
             <div className="grid gap-6">
-              {flagsData?.data?.map((flag: FlagResponse) => (
+              {(flagsData as any)?.data?.map((flag: FlagResponse) => (
                 <Card key={flag.flagId}>
                   <CardHeader>
                     <div className="flex items-center justify-between">
@@ -169,7 +169,7 @@ export default function Moderation() {
                 </Card>
               ))}
 
-              {flagsData?.data?.length === 0 && (
+              {(flagsData as any)?.data?.length === 0 && (
                 <Card>
                   <CardContent className="text-center py-8">
                     <Flag className="h-12 w-12 text-muted-foreground mx-auto mb-4" />

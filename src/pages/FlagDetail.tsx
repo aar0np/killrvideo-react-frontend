@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { useFlagDetails, useActionFlag } from '@/hooks/useApi';
+import { FlagResponse } from '@/types/api';
 import { AlertTriangle, CheckCircle, XCircle, Clock, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 import Layout from '@/components/layout/Layout';
@@ -16,8 +17,11 @@ export default function FlagDetail() {
   const navigate = useNavigate();
   const [moderatorNotes, setModeratorNotes] = useState('');
   
-  const { data: flag, isLoading } = useFlagDetails(flagId!);
+  const { data: flagData, isLoading } = useFlagDetails(flagId!);
   const actionFlagMutation = useActionFlag();
+
+  // Type the flag data properly
+  const flag = flagData as FlagResponse;
 
   const handleFlagAction = async (status: string) => {
     if (!flagId) return;
