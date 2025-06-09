@@ -57,10 +57,10 @@ class ApiClient {
     });
   }
 
-  async register(username: string, email: string, password: string) {
+  async register(firstName: string, lastName: string, email: string, password: string) {
     return this.request('/users/register', {
       method: 'POST',
-      body: JSON.stringify({ username, email, password }),
+      body: JSON.stringify({ firstName, lastName, email, password }),
     });
   }
 
@@ -84,36 +84,36 @@ class ApiClient {
   }
 
   async getVideo(videoId: string) {
-    return this.request(`/videos/${videoId}`);
+    return this.request(`/videos/id/${videoId}`);
   }
 
   async getVideoStatus(videoId: string) {
-    return this.request(`/videos/${videoId}/status`);
+    return this.request(`/videos/id/${videoId}/status`);
   }
 
   async updateVideo(videoId: string, data: any) {
-    return this.request(`/videos/${videoId}`, {
+    return this.request(`/videos/id/${videoId}`, {
       method: 'PUT',
       body: JSON.stringify(data),
     });
   }
 
   async recordView(videoId: string) {
-    return this.request(`/videos/${videoId}/view`, {
+    return this.request(`/videos/id/${videoId}/view`, {
       method: 'POST',
     });
   }
 
-  async getLatestVideos() {
-    return this.request('/videos/latest');
+  async getLatestVideos(page: number = 1, pageSize: number = 10) {
+    return this.request(`/videos/latest?page=${page}&pageSize=${pageSize}`);
   }
 
-  async getVideosByTag(tag: string) {
-    return this.request(`/videos/by-tag/${tag}`);
+  async getVideosByTag(tag: string, page: number = 1, pageSize: number = 10) {
+    return this.request(`/videos/by-tag/${tag}?page=${page}&pageSize=${pageSize}`);
   }
 
-  async getVideosByUser(userId: string) {
-    return this.request(`/users/${userId}/videos`);
+  async getVideosByUser(userId: string, page: number = 1, pageSize: number = 10) {
+    return this.request(`/videos/by-uploader/${userId}?page=${page}&pageSize=${pageSize}`);
   }
 
   // Comment endpoints
@@ -124,12 +124,12 @@ class ApiClient {
     });
   }
 
-  async getComments(videoId: string) {
-    return this.request(`/videos/${videoId}/comments`);
+  async getComments(videoId: string, page: number = 1, pageSize: number = 10) {
+    return this.request(`/videos/${videoId}/comments?page=${page}&pageSize=${pageSize}`);
   }
 
-  async getCommentsByUser(userId: string) {
-    return this.request(`/users/${userId}/comments`);
+  async getCommentsByUser(userId: string, page: number = 1, pageSize: number = 10) {
+    return this.request(`/users/${userId}/comments?page=${page}&pageSize=${pageSize}`);
   }
 
   // Rating endpoints
@@ -144,49 +144,80 @@ class ApiClient {
     return this.request(`/videos/${videoId}/ratings`);
   }
 
+  async getVideoRating(videoId: string) {
+    return this.request(`/videos/id/${videoId}/rating`);
+  }
+
   // Search endpoints
   async searchVideos(params: any) {
     const queryString = new URLSearchParams(params).toString();
     return this.request(`/search/videos?${queryString}`);
   }
 
-  async getTagSuggestions() {
-    return this.request('/tags/suggest');
+  async getTagSuggestions(query: string, limit: number = 10) {
+    return this.request(`/search/tags/suggest?query=${query}&limit=${limit}`);
   }
 
   // Recommendation endpoints
-  async getRelatedVideos(videoId: string) {
-    return this.request(`/videos/${videoId}/related`);
+  async getRelatedVideos(videoId: string, limit: number = 5) {
+    return this.request(`/videos/id/${videoId}/related?limit=${limit}`);
   }
 
-  async getPersonalizedRecommendations() {
-    return this.request('/recommendations/foryou');
+  async getPersonalizedRecommendations(page: number = 1, pageSize: number = 10) {
+    return this.request(`/recommendations/foryou?page=${page}&pageSize=${pageSize}`);
   }
 
   // Moderation endpoints
-  async flagVideo(videoId: string, reason: string, description: string) {
-    return this.request(`/videos/${videoId}/flags`, {
+  async flagContent(data: any) {
+    return this.request('/flags', {
       method: 'POST',
-      body: JSON.stringify({ reason, description }),
+      body: JSON.stringify(data),
     });
   }
 
-  async getFlags(videoId: string) {
-    return this.request(`/videos/${videoId}/flags`);
-  }
-
-  async getModerationFlags() {
-    return this.request('/moderation/flags');
+  async getModerationFlags(status?: string, page: number = 1, pageSize: number = 10) {
+    const params = new URLSearchParams({ page: page.toString(), pageSize: pageSize.toString() });
+    if (status) params.append('status', status);
+    return this.request(`/moderation/flags?${params.toString()}`);
   }
 
   async getFlagDetails(flagId: string) {
     return this.request(`/moderation/flags/${flagId}`);
   }
 
-  async actionFlag(flagId: string, action: string) {
+  async actionFlag(flagId: string, status: string, moderatorNotes?: string) {
     return this.request(`/moderation/flags/${flagId}/action`, {
       method: 'POST',
-      body: JSON.stringify({ action }),
+      body: JSON.stringify({ status, moderatorNotes }),
+    });
+  }
+
+  async searchUsers(query?: string) {
+    const params = query ? `?q=${encodeURIComponent(query)}` : '';
+    return this.request(`/moderation/users${params}`);
+  }
+
+  async assignModerator(userId: string) {
+    return this.request(`/moderation/users/${userId}/assign-moderator`, {
+      method: 'POST',
+    });
+  }
+
+  async revokeModerator(userId: string) {
+    return this.request(`/moderation/users/${userId}/revoke-moderator`, {
+      method: 'POST',
+    });
+  }
+
+  async restoreVideo(videoId: string) {
+    return this.request(`/moderation/videos/${videoId}/restore`, {
+      method: 'POST',
+    });
+  }
+
+  async restoreComment(commentId: string) {
+    return this.request(`/moderation/comments/${commentId}/restore`, {
+      method: 'POST',
     });
   }
 }

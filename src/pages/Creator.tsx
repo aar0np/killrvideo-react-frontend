@@ -1,283 +1,317 @@
 
 import { useState } from 'react';
-import Layout from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Eye, Star, Upload, TrendingUp } from 'lucide-react';
-import { useSubmitVideo, useProfile, useVideosByUser } from '@/hooks/useApi';
-import { useToast } from '@/hooks/use-toast';
-import { Video, User } from '@/types/api';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Upload, Video, BarChart3, Clock, Eye, Star } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
+import { 
+  useSubmitVideo, 
+  useVideosByUser, 
+  useProfile,
+  useUpdateVideo,
+  useVideoStatus
+} from '@/hooks/useApi';
+import { VideoDetailResponse, PaginatedResponse } from '@/types/api';
+import { toast } from 'sonner';
+import { Navigate } from 'react-router-dom';
 
-const Creator = () => {
-  const [uploadForm, setUploadForm] = useState({
+export default function Creator() {
+  const { user } = useAuth();
+  const [videoUrl, setVideoUrl] = useState('');
+  const [editingVideo, setEditingVideo] = useState<VideoDetailResponse | null>(null);
+  const [editForm, setEditForm] = useState({
     title: '',
-    youtubeUrl: '',
     description: '',
     tags: ''
   });
 
   const { data: profile } = useProfile();
-  const { data: userVideos, isLoading: videosLoading } = useVideosByUser((profile as User)?.id || '');
+  const { data: videosData, isLoading } = useVideosByUser(user?.userId || '', 1, 20);
   const submitVideoMutation = useSubmitVideo();
-  const { toast } = useToast();
+  const updateVideoMutation = useUpdateVideo();
 
-  const handleUpload = async (e: React.FormEvent) => {
+  if (!user) {
+    return <Navigate to="/auth" replace />;
+  }
+
+  const videos = (videosData as PaginatedResponse<VideoDetailResponse>)?.data || [];
+
+  const handleSubmitVideo = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+    if (!videoUrl.trim()) return;
+
     try {
-      const videoData = {
-        title: uploadForm.title,
-        description: uploadForm.description,
-        youtubeUrl: uploadForm.youtubeUrl,
-        tags: uploadForm.tags.split(',').map(tag => tag.trim()).filter(Boolean),
-      };
-
-      await submitVideoMutation.mutateAsync(videoData);
-      
-      toast({
-        title: "Video uploaded successfully!",
-        description: "Your video is being processed and will be available soon.",
-      });
-
-      // Reset form
-      setUploadForm({
-        title: '',
-        youtubeUrl: '',
-        description: '',
-        tags: ''
-      });
+      await submitVideoMutation.mutateAsync({ youtubeUrl: videoUrl });
+      setVideoUrl('');
+      toast.success('Video submitted successfully!');
     } catch (error: any) {
-      toast({
-        title: "Upload failed",
-        description: error.detail || "Failed to upload video. Please try again.",
-        variant: "destructive",
-      });
+      toast.error(error.detail || 'Failed to submit video');
     }
   };
 
-  const formatViews = (num: number) => {
-    if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
-    if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
-    return num.toString();
+  const handleEditVideo = (video: VideoDetailResponse) => {
+    setEditingVideo(video);
+    setEditForm({
+      title: video.title,
+      description: video.description || '',
+      tags: video.tags.join(', ')
+    });
   };
 
-  const videos = (userVideos as Video[]) || [];
+  const handleUpdateVideo = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingVideo) return;
 
-  const getTotalViews = () => {
-    return videos.reduce((total: number, video: Video) => total + video.views, 0);
+    try {
+      await updateVideoMutation.mutateAsync({
+        videoId: editingVideo.videoId,
+        data: {
+          title: editForm.title,
+          description: editForm.description,
+          tags: editForm.tags.split(',').map(tag => tag.trim()).filter(Boolean)
+        }
+      });
+      setEditingVideo(null);
+      toast.success('Video updated successfully!');
+    } catch (error: any) {
+      toast.error(error.detail || 'Failed to update video');
+    }
   };
 
-  const getAverageRating = () => {
-    if (!videos.length) return 0;
-    const totalRating = videos.reduce((total: number, video: Video) => total + video.rating, 0);
-    return (totalRating / videos.length).toFixed(1);
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'READY': return 'bg-green-500';
+      case 'PROCESSING': return 'bg-yellow-500';
+      case 'PENDING': return 'bg-blue-500';
+      case 'ERROR': return 'bg-red-500';
+      default: return 'bg-gray-500';
+    }
   };
+
+  // Calculate stats
+  const totalViews = videos.reduce((sum, video) => sum + video.viewCount, 0);
+  const totalVideos = videos.length;
+  const avgRating = videos.reduce((sum, video) => sum + (video.averageRating || 0), 0) / totalVideos || 0;
 
   return (
-    <Layout>
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
-          <h1 className="font-sora text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-            Creator Dashboard
-          </h1>
-          <p className="font-noto text-lg text-gray-600">
-            Manage your videos and track performance
-          </p>
+    <div className="container mx-auto py-8 px-4">
+      <div className="max-w-6xl mx-auto">
+        <h1 className="text-3xl font-bold mb-8">Creator Dashboard</h1>
+
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center">
+                <Video className="h-4 w-4 text-muted-foreground" />
+                <div className="ml-2">
+                  <p className="text-2xl font-bold">{totalVideos}</p>
+                  <p className="text-xs text-muted-foreground">Total Videos</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center">
+                <Eye className="h-4 w-4 text-muted-foreground" />
+                <div className="ml-2">
+                  <p className="text-2xl font-bold">{totalViews.toLocaleString()}</p>
+                  <p className="text-xs text-muted-foreground">Total Views</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center">
+                <Star className="h-4 w-4 text-muted-foreground" />
+                <div className="ml-2">
+                  <p className="text-2xl font-bold">{avgRating.toFixed(1)}</p>
+                  <p className="text-xs text-muted-foreground">Avg Rating</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center">
+                <BarChart3 className="h-4 w-4 text-muted-foreground" />
+                <div className="ml-2">
+                  <p className="text-2xl font-bold">
+                    {videos.filter(v => v.status === 'READY').length}
+                  </p>
+                  <p className="text-xs text-muted-foreground">Published</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Upload Section */}
-          <div className="lg:col-span-2">
-            <Card className="mb-8">
+        <Tabs defaultValue="upload" className="w-full">
+          <TabsList>
+            <TabsTrigger value="upload">Upload Video</TabsTrigger>
+            <TabsTrigger value="manage">Manage Videos</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="upload" className="space-y-4">
+            <Card>
               <CardHeader>
-                <CardTitle className="font-sora flex items-center">
-                  <Upload className="w-5 h-5 mr-2" />
-                  Upload New Video
+                <CardTitle className="flex items-center gap-2">
+                  <Upload className="h-5 w-5" />
+                  Submit New Video
                 </CardTitle>
-                <CardDescription className="font-noto">
-                  Add a new video to your collection by providing a YouTube URL
+                <CardDescription>
+                  Submit a YouTube URL to add a video to your channel
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <form onSubmit={handleUpload} className="space-y-4">
-                  <div>
-                    <Label htmlFor="title" className="font-noto">Video Title</Label>
+                <form onSubmit={handleSubmitVideo} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="youtube-url">YouTube URL</Label>
                     <Input
-                      id="title"
-                      type="text"
-                      placeholder="Enter video title"
-                      value={uploadForm.title}
-                      onChange={(e) => setUploadForm({ ...uploadForm, title: e.target.value })}
-                      required
-                      className="font-noto"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="youtubeUrl" className="font-noto">YouTube URL</Label>
-                    <Input
-                      id="youtubeUrl"
+                      id="youtube-url"
                       type="url"
                       placeholder="https://www.youtube.com/watch?v=..."
-                      value={uploadForm.youtubeUrl}
-                      onChange={(e) => setUploadForm({ ...uploadForm, youtubeUrl: e.target.value })}
+                      value={videoUrl}
+                      onChange={(e) => setVideoUrl(e.target.value)}
                       required
-                      className="font-noto"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="description" className="font-noto">Description</Label>
-                    <Input
-                      id="description"
-                      type="text"
-                      placeholder="Brief description of your video"
-                      value={uploadForm.description}
-                      onChange={(e) => setUploadForm({ ...uploadForm, description: e.target.value })}
-                      className="font-noto"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="tags" className="font-noto">Tags</Label>
-                    <Input
-                      id="tags"
-                      type="text"
-                      placeholder="React, Node.js, TypeScript (comma separated)"
-                      value={uploadForm.tags}
-                      onChange={(e) => setUploadForm({ ...uploadForm, tags: e.target.value })}
-                      className="font-noto"
                     />
                   </div>
                   <Button 
                     type="submit" 
-                    className="bg-primary hover:bg-purple-800 font-noto"
                     disabled={submitVideoMutation.isPending}
+                    className="w-full"
                   >
-                    {submitVideoMutation.isPending ? 'Uploading...' : 'Upload Video'}
+                    {submitVideoMutation.isPending ? 'Submitting...' : 'Submit Video'}
                   </Button>
                 </form>
               </CardContent>
             </Card>
+          </TabsContent>
 
-            {/* Video Management */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="font-sora">Your Videos</CardTitle>
-                <CardDescription className="font-noto">
-                  Manage and track your uploaded content
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {videosLoading ? (
-                  <div className="text-center py-8 font-noto text-gray-600">
-                    Loading your videos...
-                  </div>
-                ) : videos.length ? (
-                  <div className="space-y-4">
-                    {videos.map((video: Video) => (
-                      <div key={video.id} className="flex items-center justify-between p-4 border rounded-lg">
+          <TabsContent value="manage" className="space-y-4">
+            {editingVideo && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Edit Video</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <form onSubmit={handleUpdateVideo} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-title">Title</Label>
+                      <Input
+                        id="edit-title"
+                        value={editForm.title}
+                        onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-description">Description</Label>
+                      <Textarea
+                        id="edit-description"
+                        value={editForm.description}
+                        onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                        rows={4}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-tags">Tags (comma-separated)</Label>
+                      <Input
+                        id="edit-tags"
+                        value={editForm.tags}
+                        onChange={(e) => setEditForm({ ...editForm, tags: e.target.value })}
+                        placeholder="gaming, tutorial, entertainment"
+                      />
+                    </div>
+                    <div className="flex gap-2">
+                      <Button type="submit" disabled={updateVideoMutation.isPending}>
+                        {updateVideoMutation.isPending ? 'Updating...' : 'Update Video'}
+                      </Button>
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        onClick={() => setEditingVideo(null)}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </form>
+                </CardContent>
+              </Card>
+            )}
+
+            <div className="grid gap-4">
+              {isLoading ? (
+                <p>Loading videos...</p>
+              ) : videos.length === 0 ? (
+                <Card>
+                  <CardContent className="pt-6 text-center">
+                    <p className="text-muted-foreground">No videos uploaded yet</p>
+                  </CardContent>
+                </Card>
+              ) : (
+                videos.map((video) => (
+                  <Card key={video.videoId}>
+                    <CardContent className="pt-6">
+                      <div className="flex justify-between items-start">
                         <div className="flex-1">
-                          <h3 className="font-sora font-semibold text-gray-900 mb-1">
-                            {video.title}
-                          </h3>
-                          <div className="flex items-center space-x-4 text-sm text-gray-600 font-noto">
-                            <span className="flex items-center">
-                              <Eye className="w-4 h-4 mr-1" />
-                              {formatViews(video.views)} views
-                            </span>
-                            <span className="flex items-center">
-                              <Star className="w-4 h-4 mr-1 fill-accent text-accent" />
-                              {video.rating.toFixed(1)}
-                            </span>
-                            <span>
-                              {new Date(video.uploadDate).toLocaleDateString()}
-                            </span>
+                          <h3 className="font-semibold text-lg mb-2">{video.title}</h3>
+                          {video.description && (
+                            <p className="text-muted-foreground mb-2">{video.description}</p>
+                          )}
+                          <div className="flex flex-wrap gap-2 mb-4">
+                            {video.tags.map((tag, index) => (
+                              <Badge key={index} variant="secondary">{tag}</Badge>
+                            ))}
+                          </div>
+                          <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                            <div className="flex items-center gap-1">
+                              <Eye className="h-4 w-4" />
+                              {video.viewCount} views
+                            </div>
+                            {video.averageRating && (
+                              <div className="flex items-center gap-1">
+                                <Star className="h-4 w-4" />
+                                {video.averageRating.toFixed(1)}
+                              </div>
+                            )}
+                            <div className="flex items-center gap-1">
+                              <Clock className="h-4 w-4" />
+                              {new Date(video.submittedAt).toLocaleDateString()}
+                            </div>
                           </div>
                         </div>
-                        <div className="flex items-center space-x-2">
-                          <Badge 
-                            variant="secondary" 
-                            className={
-                              video.status === 'published' 
-                                ? 'bg-green-100 text-green-800'
-                                : video.status === 'pending'
-                                ? 'bg-yellow-100 text-yellow-800'
-                                : 'bg-red-100 text-red-800'
-                            }
-                          >
+                        <div className="flex flex-col items-end gap-2">
+                          <Badge className={getStatusColor(video.status)}>
                             {video.status}
                           </Badge>
-                          <Button variant="outline" size="sm">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleEditVideo(video)}
+                          >
                             Edit
                           </Button>
                         </div>
                       </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-8 font-noto text-gray-600">
-                    No videos uploaded yet. Upload your first video above!
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Stats Sidebar */}
-          <div>
-            <Card className="mb-6">
-              <CardHeader>
-                <CardTitle className="font-sora flex items-center">
-                  <TrendingUp className="w-5 h-5 mr-2" />
-                  Analytics
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div>
-                    <div className="font-noto text-sm text-gray-600">Total Views</div>
-                    <div className="font-sora text-2xl font-bold text-gray-900">
-                      {formatViews(getTotalViews())}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="font-noto text-sm text-gray-600">Average Rating</div>
-                    <div className="font-sora text-2xl font-bold text-gray-900">
-                      {getAverageRating()}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="font-noto text-sm text-gray-600">Videos Published</div>
-                    <div className="font-sora text-2xl font-bold text-gray-900">
-                      {videos.filter((v: Video) => v.status === 'published').length}
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="font-sora">Quick Actions</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <Button variant="outline" className="w-full justify-start font-noto">
-                  View Public Profile
-                </Button>
-                <Button variant="outline" className="w-full justify-start font-noto">
-                  Analytics Dashboard
-                </Button>
-                <Button variant="outline" className="w-full justify-start font-noto">
-                  Content Settings
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
+                    </CardContent>
+                  </Card>
+                ))
+              )}
+            </div>
+          </TabsContent>
+        </Tabs>
       </div>
-    </Layout>
+    </div>
   );
-};
-
-export default Creator;
+}
