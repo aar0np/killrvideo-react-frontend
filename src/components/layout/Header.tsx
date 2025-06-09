@@ -1,133 +1,137 @@
 
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Search, User, Settings, LogOut, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { useProfile } from '@/hooks/useApi';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
+import { Search, Upload, User, LogOut, Shield } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
 import { apiClient } from '@/lib/api';
-import { useToast } from '@/hooks/use-toast';
-import { User as UserType } from '@/types/api';
 
-const Header = () => {
+export default function Header() {
   const [searchQuery, setSearchQuery] = useState('');
   const navigate = useNavigate();
-  const { toast } = useToast();
-  
-  const { data: profile, isLoading } = useProfile();
-  const user = profile as UserType;
-  const isAuthenticated = !!user && !isLoading;
+  const { user, isAuthenticated } = useAuth();
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      // TODO: Implement search navigation
-      console.log('Searching for:', searchQuery);
+      navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
     }
   };
 
-  const handleSignOut = () => {
+  const handleLogout = () => {
     apiClient.clearToken();
-    toast({
-      title: "Signed out",
-      description: "You have been successfully signed out.",
-    });
-    navigate('/');
-    // Force page reload to clear any cached data
-    window.location.reload();
+    navigate('/auth');
+  };
+
+  const getUserInitials = (user: any) => {
+    return `${user.firstName?.[0] || ''}${user.lastName?.[0] || ''}`.toUpperCase();
+  };
+
+  const getUserDisplayName = (user: any) => {
+    return `${user.firstName || ''} ${user.lastName || ''}`.trim();
+  };
+
+  const isModerator = () => {
+    return user?.roles?.includes('moderator');
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex h-16 items-center justify-between">
-          {/* Logo */}
-          <Link to="/" className="flex items-center space-x-2 group">
-            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center relative overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-br from-primary to-purple-800"></div>
-              <div className="relative w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-b-[8px] border-b-white animate-triangle-float"></div>
+    <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="container mx-auto px-4 h-16 flex items-center justify-between">
+        <div className="flex items-center space-x-6">
+          <Link to="/" className="flex items-center space-x-2">
+            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+              <span className="text-primary-foreground font-bold text-sm">KV</span>
             </div>
-            <span className="font-sora text-xl font-bold text-primary group-hover:text-purple-800 transition-colors">
-              KillrVideo
-            </span>
+            <span className="font-bold text-xl">KillrVideo</span>
           </Link>
-
-          {/* Search Bar */}
-          <div className="flex-1 max-w-xl mx-4 relative">
-            <form onSubmit={handleSearch}>
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-              <Input
-                type="text"
-                placeholder="Search videos, creators, tags..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 pr-4 py-2 w-full font-noto"
-              />
-            </form>
-          </div>
-
-          {/* Navigation */}
-          <nav className="flex items-center space-x-4">
-            {isAuthenticated ? (
-              <>
-                <Link to="/creator">
-                  <Button variant="outline" size="sm" className="font-noto">
-                    <Upload className="w-4 h-4 mr-1" />
-                    Creator
-                  </Button>
-                </Link>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm" className="relative">
-                      <User className="w-4 h-4" />
-                      {user?.username && (
-                        <span className="ml-2 font-noto">{user.username}</span>
-                      )}
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-48 bg-white border shadow-lg z-50">
-                    <DropdownMenuItem>
-                      <User className="w-4 h-4 mr-2" />
-                      Profile
-                    </DropdownMenuItem>
-                    <DropdownMenuItem>
-                      <Settings className="w-4 h-4 mr-2" />
-                      Settings
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={handleSignOut}>
-                      <LogOut className="w-4 h-4 mr-2" />
-                      Sign Out
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </>
-            ) : (
-              <div className="flex items-center space-x-2">
-                <Link to="/auth">
-                  <Button variant="ghost" size="sm" className="font-noto">
-                    Sign In
-                  </Button>
-                </Link>
-                <Link to="/auth">
-                  <Button size="sm" className="bg-primary hover:bg-purple-800 font-noto">
-                    Sign Up
-                  </Button>
-                </Link>
-              </div>
+          
+          <nav className="hidden md:flex items-center space-x-6">
+            <Link to="/" className="text-sm font-medium hover:text-primary transition-colors">
+              Home
+            </Link>
+            <Link to="/trending" className="text-sm font-medium hover:text-primary transition-colors">
+              Trending
+            </Link>
+            <Link to="/categories" className="text-sm font-medium hover:text-primary transition-colors">
+              Categories
+            </Link>
+            {isAuthenticated && isModerator() && (
+              <Link to="/moderation" className="text-sm font-medium hover:text-primary transition-colors">
+                Moderation
+              </Link>
             )}
           </nav>
+        </div>
+
+        <div className="flex-1 max-w-md mx-8">
+          <form onSubmit={handleSearch} className="relative">
+            <Input
+              type="search"
+              placeholder="Search videos..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
+            />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+          </form>
+        </div>
+
+        <div className="flex items-center space-x-4">
+          {isAuthenticated ? (
+            <>
+              <Button asChild variant="ghost" size="sm">
+                <Link to="/creator">
+                  <Upload className="h-4 w-4 mr-2" />
+                  Upload
+                </Link>
+              </Button>
+              
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+                    <Avatar className="h-10 w-10">
+                      <AvatarFallback>{getUserInitials(user)}</AvatarFallback>
+                    </Avatar>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-56" align="end" forceMount>
+                  <div className="flex flex-col space-y-1 p-2">
+                    <p className="text-sm font-medium leading-none">{getUserDisplayName(user)}</p>
+                    <p className="text-xs leading-none text-muted-foreground">{user?.email}</p>
+                  </div>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <Link to="/profile">
+                      <User className="mr-2 h-4 w-4" />
+                      Profile
+                    </Link>
+                  </DropdownMenuItem>
+                  {isModerator() && (
+                    <DropdownMenuItem asChild>
+                      <Link to="/moderation">
+                        <Shield className="mr-2 h-4 w-4" />
+                        Moderation
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuItem onClick={handleLogout}>
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Sign out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </>
+          ) : (
+            <Button asChild>
+              <Link to="/auth">Sign In</Link>
+            </Button>
+          )}
         </div>
       </div>
     </header>
   );
-};
-
-export default Header;
+}

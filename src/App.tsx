@@ -9,6 +9,9 @@ import Index from "./pages/Index";
 import Watch from "./pages/Watch";
 import Auth from "./pages/Auth";
 import Creator from "./pages/Creator";
+import Moderation from "./pages/Moderation";
+import FlagDetail from "./pages/FlagDetail";
+import UserManagement from "./pages/UserManagement";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -25,6 +28,9 @@ const App = () => (
             <Route path="/watch/:id" element={<Watch />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/creator" element={<Creator />} />
+            <Route path="/moderation" element={<Moderation />} />
+            <Route path="/moderation/flags/:flagId" element={<FlagDetail />} />
+            <Route path="/moderation/users" element={<UserManagement />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
