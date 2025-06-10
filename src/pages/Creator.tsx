@@ -59,7 +59,7 @@ export default function Creator() {
     setEditForm({
       title: video.title,
       description: video.description || '',
-      tags: video.tags.join(', ')
+      tags: (video.tags ?? []).join(', ')
     });
   };
 
@@ -270,11 +270,13 @@ export default function Creator() {
                           {video.description && (
                             <p className="text-muted-foreground mb-2">{video.description}</p>
                           )}
-                          <div className="flex flex-wrap gap-2 mb-4">
-                            {video.tags.map((tag, index) => (
-                              <Badge key={index} variant="secondary">{tag}</Badge>
-                            ))}
-                          </div>
+                          {video.tags && video.tags.length > 0 && (
+                            <div className="flex flex-wrap gap-2 mb-4">
+                              {video.tags.map((tag, index) => (
+                                <Badge key={index} variant="secondary">{tag}</Badge>
+                              ))}
+                            </div>
+                          )}
                           <div className="flex items-center gap-4 text-sm text-muted-foreground">
                             <div className="flex items-center gap-1">
                               <Eye className="h-4 w-4" />
