@@ -152,31 +152,50 @@ export const usePersonalizedRecommendations = (page: number = 1, pageSize: numbe
 
 // Auth hooks
 export const useProfile = () => {
+  // Only attempt to fetch the current user's profile when an auth token is present.
+  // By setting a very long `staleTime` and disabling automatic refetching on
+  // window focus / reconnect, we avoid repeatedly spamming the backend with
+  // /users/me requests while still keeping the data available in cache for the
+  // lifetime of the session. The query will be refreshed manually after
+  // login / logout via queryClient.invalidateQueries.
+  const hasToken = typeof window !== 'undefined' && !!localStorage.getItem('auth_token');
+
   return useQuery({
     queryKey: ['user', 'profile'],
     queryFn: () => apiClient.getProfile(),
+    enabled: hasToken,
+    staleTime: Infinity,       // never become stale automatically
+    gcTime: Infinity,          // keep in cache for the entire session
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
   });
 };
 
 export const useLogin = () => {
+  const queryClient = useQueryClient();
+  
   return useMutation({
     mutationFn: (credentials: UserLoginRequest) =>
       apiClient.login(credentials),
     onSuccess: (data: any) => {
       if (data.token) {
         apiClient.setToken(data.token);
+        queryClient.invalidateQueries({ queryKey: ['user', 'profile'] });
       }
     },
   });
 };
 
 export const useRegister = () => {
+  const queryClient = useQueryClient();
+  
   return useMutation({
     mutationFn: (userInfo: UserCreateRequest) =>
       apiClient.register(userInfo),
     onSuccess: (data: any) => {
       if (data.token) {
         apiClient.setToken(data.token);
+        queryClient.invalidateQueries({ queryKey: ['user', 'profile'] });
       }
     },
   });
