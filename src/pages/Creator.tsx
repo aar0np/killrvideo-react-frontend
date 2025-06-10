@@ -1,5 +1,5 @@
-
 import { useState } from 'react';
+import Layout from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -99,6 +99,7 @@ export default function Creator() {
   const avgRating = videos.reduce((sum, video) => sum + (video.averageRating || 0), 0) / totalVideos || 0;
 
   return (
+    <Layout>
     <div className="container mx-auto py-8 px-4">
       <div className="max-w-6xl mx-auto">
         <h1 className="text-3xl font-bold mb-8">Creator Dashboard</h1>
@@ -313,5 +314,6 @@ export default function Creator() {
         </Tabs>
       </div>
     </div>
+    </Layout>
   );
 }
