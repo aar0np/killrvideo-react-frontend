@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api';
 import { 
@@ -8,7 +7,7 @@ import {
   User,
   PaginatedResponse,
   UserLoginRequest,
-  UserCreateRequest
+  UserCreateRequest,
 } from '@/types/api';
 
 // Video hooks
@@ -81,13 +80,11 @@ export const useComments = (videoId: string, page: number = 1, pageSize: number 
   });
 };
 
-export const useAddComment = () => {
+export const useAddComment = (videoId: string) => {
   const queryClient = useQueryClient();
-  
   return useMutation({
-    mutationFn: ({ videoId, text }: { videoId: string; text: string }) =>
-      apiClient.addComment(videoId, text),
-    onSuccess: (_, { videoId }) => {
+    mutationFn: (text: string) => apiClient.addComment(videoId, { text }),
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['comments', videoId] });
     },
   });
@@ -102,15 +99,13 @@ export const useVideoRating = (videoId: string) => {
   });
 };
 
-export const useRateVideo = () => {
+export const useRateVideo = (videoId: string) => {
   const queryClient = useQueryClient();
-  
   return useMutation({
-    mutationFn: ({ videoId, rating }: { videoId: string; rating: number }) =>
-      apiClient.rateVideo(videoId, rating),
-    onSuccess: (_, { videoId }) => {
+    mutationFn: (rating: number) => apiClient.rateVideo(videoId, { rating }),
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['ratings', videoId] });
-      queryClient.invalidateQueries({ queryKey: ['videos', videoId] });
+      queryClient.invalidateQueries({ queryKey: ['video', videoId] });
     },
   });
 };
@@ -158,8 +153,8 @@ export const useProfile = () => {
 
 export const useLogin = () => {
   return useMutation({
-    mutationFn: ({ email, password }: UserLoginRequest) =>
-      apiClient.login(email, password),
+    mutationFn: (credentials: UserLoginRequest) =>
+      apiClient.login(credentials),
     onSuccess: (data: any) => {
       if (data.token) {
         apiClient.setToken(data.token);
@@ -170,8 +165,8 @@ export const useLogin = () => {
 
 export const useRegister = () => {
   return useMutation({
-    mutationFn: ({ firstName, lastName, email, password }: UserCreateRequest) =>
-      apiClient.register(firstName, lastName, email, password),
+    mutationFn: (userInfo: UserCreateRequest) =>
+      apiClient.register(userInfo),
     onSuccess: (data: any) => {
       if (data.token) {
         apiClient.setToken(data.token);
@@ -181,14 +176,14 @@ export const useRegister = () => {
 };
 
 // Moderation hooks
-export const useModerationFlags = (status?: string, page: number = 1, pageSize: number = 10) => {
+export const useGetModerationFlags = (status: "open" | "under_review" | "approved" | "rejected", page: number, pageSize: number) => {
   return useQuery({
-    queryKey: ['moderation', 'flags', status, page, pageSize],
+    queryKey: ['flags', status, page, pageSize],
     queryFn: () => apiClient.getModerationFlags(status, page, pageSize),
   });
 };
 
-export const useFlagDetails = (flagId: string) => {
+export const useGetFlagDetails = (flagId: string) => {
   return useQuery({
     queryKey: ['moderation', 'flags', flagId],
     queryFn: () => apiClient.getFlagDetails(flagId),
@@ -196,14 +191,14 @@ export const useFlagDetails = (flagId: string) => {
   });
 };
 
-export const useActionFlag = () => {
+export const useActionFlag = (flagId: string) => {
   const queryClient = useQueryClient();
-  
   return useMutation({
-    mutationFn: ({ flagId, status, moderatorNotes }: { flagId: string; status: string; moderatorNotes?: string }) =>
-      apiClient.actionFlag(flagId, status, moderatorNotes),
+    mutationFn: (data: { status: "open" | "under_review" | "approved" | "rejected"; moderatorNotes?: string }) =>
+      apiClient.actionFlag(flagId, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['moderation', 'flags'] });
+      queryClient.invalidateQueries({ queryKey: ['flags'] });
+      queryClient.invalidateQueries({ queryKey: ['flag', flagId] });
     },
   });
 };

@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { useFlagDetails, useActionFlag } from '@/hooks/useApi';
+import { useGetFlagDetails, useActionFlag } from '@/hooks/useApi';
 import { FlagResponse } from '@/types/api';
 import { AlertTriangle, CheckCircle, XCircle, Clock, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
@@ -17,18 +16,17 @@ export default function FlagDetail() {
   const navigate = useNavigate();
   const [moderatorNotes, setModeratorNotes] = useState('');
   
-  const { data: flagData, isLoading } = useFlagDetails(flagId!);
-  const actionFlagMutation = useActionFlag();
+  const { data: flagData, isLoading } = useGetFlagDetails(flagId!);
+  const actionFlagMutation = useActionFlag(flagId!);
 
   // Type the flag data properly
   const flag = flagData as FlagResponse;
 
-  const handleFlagAction = async (status: string) => {
+  const handleFlagAction = async (status: "open" | "under_review" | "approved" | "rejected") => {
     if (!flagId) return;
     
     try {
       await actionFlagMutation.mutateAsync({ 
-        flagId, 
         status, 
         moderatorNotes: moderatorNotes.trim() || undefined 
       });

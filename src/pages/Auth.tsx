@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -39,6 +38,10 @@ export default function Auth() {
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (registerForm.password.length < 8) {
+      toast.error('Password must be at least 8 characters long');
+      return;
+    }
     try {
       await registerMutation.mutateAsync(registerForm);
       toast.success('Registration successful!');
@@ -68,6 +71,7 @@ export default function Auth() {
                   <Input
                     id="email"
                     type="email"
+                    autoComplete="email"
                     value={loginForm.email}
                     onChange={(e) => setLoginForm({ ...loginForm, email: e.target.value })}
                     required
@@ -78,6 +82,7 @@ export default function Auth() {
                   <Input
                     id="password"
                     type="password"
+                    autoComplete="current-password"
                     value={loginForm.password}
                     onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
                     required
@@ -100,6 +105,7 @@ export default function Auth() {
                     <Label htmlFor="firstName">First Name</Label>
                     <Input
                       id="firstName"
+                      autoComplete="given-name"
                       value={registerForm.firstName}
                       onChange={(e) => setRegisterForm({ ...registerForm, firstName: e.target.value })}
                       required
@@ -109,6 +115,7 @@ export default function Auth() {
                     <Label htmlFor="lastName">Last Name</Label>
                     <Input
                       id="lastName"
+                      autoComplete="family-name"
                       value={registerForm.lastName}
                       onChange={(e) => setRegisterForm({ ...registerForm, lastName: e.target.value })}
                       required
@@ -120,6 +127,7 @@ export default function Auth() {
                   <Input
                     id="registerEmail"
                     type="email"
+                    autoComplete="email"
                     value={registerForm.email}
                     onChange={(e) => setRegisterForm({ ...registerForm, email: e.target.value })}
                     required
@@ -130,6 +138,7 @@ export default function Auth() {
                   <Input
                     id="registerPassword"
                     type="password"
+                    autoComplete="new-password"
                     value={registerForm.password}
                     onChange={(e) => setRegisterForm({ ...registerForm, password: e.target.value })}
                     required

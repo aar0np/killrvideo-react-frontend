@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,25 +5,61 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useModerationFlags, useActionFlag } from '@/hooks/useApi';
+import { useGetModerationFlags, useActionFlag } from '@/hooks/useApi';
 import { FlagResponse } from '@/types/api';
 import { Flag, AlertTriangle, CheckCircle, XCircle, Clock } from 'lucide-react';
 import { toast } from 'sonner';
 import Layout from '@/components/layout/Layout';
 
 export default function Moderation() {
-  const [statusFilter, setStatusFilter] = useState<string>('all');
-  const { data: flagsData, isLoading } = useModerationFlags(statusFilter === 'all' ? undefined : statusFilter);
-  const actionFlagMutation = useActionFlag();
+  const [statusFilter, setStatusFilter] = useState<"all" | "open" | "under_review" | "approved" | "rejected">('all');
+  const { data: flagsData, isLoading } = useGetModerationFlags(statusFilter === 'all' ? undefined : statusFilter, 1, 100);
 
-  const handleFlagAction = async (flagId: string, status: string, moderatorNotes?: string) => {
-    try {
-      await actionFlagMutation.mutateAsync({ flagId, status, moderatorNotes });
-      toast.success(`Flag ${status} successfully`);
-    } catch (error: any) {
-      toast.error(error.detail || 'Failed to update flag');
-    }
-  };
+  const ActionFlagWrapper = ({ flag, children }: { flag: FlagResponse, children: React.ReactNode }) => {
+    const actionFlagMutation = useActionFlag(flag.flagId);
+
+    const handleFlagAction = async (status: "open" | "under_review" | "approved" | "rejected", moderatorNotes?: string) => {
+      try {
+        await actionFlagMutation.mutateAsync({ status, moderatorNotes });
+        toast.success(`Flag ${status} successfully`);
+      } catch (error: any) {
+        toast.error(error.detail || 'Failed to update flag');
+      }
+    };
+
+    return (
+      <>
+        {flag.status === 'open' && (
+          <div className="flex space-x-2">
+            <Button
+              size="sm"
+              onClick={() => handleFlagAction('under_review')}
+              disabled={actionFlagMutation.isPending}
+            >
+              Review
+            </Button>
+            <Button
+              size="sm"
+              variant="destructive"
+              onClick={() => handleFlagAction('approved', 'Content removed for policy violation')}
+              disabled={actionFlagMutation.isPending}
+            >
+              Approve & Remove
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => handleFlagAction('rejected', 'No policy violation found')}
+              disabled={actionFlagMutation.isPending}
+            >
+              Reject
+            </Button>
+          </div>
+        )}
+        {children}
+      </>
+    );
+  }
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -83,7 +118,10 @@ export default function Moderation() {
           <TabsContent value="flags" className="space-y-6">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-4">
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <Select
+                  value={statusFilter}
+                  onValueChange={(value) => setStatusFilter(value as "all" | "open" | "under_review" | "approved" | "rejected")}
+                >
                   <SelectTrigger className="w-48">
                     <SelectValue placeholder="Filter by status" />
                   </SelectTrigger>
@@ -99,7 +137,7 @@ export default function Moderation() {
             </div>
 
             <div className="grid gap-6">
-              {(flagsData as any)?.data?.map((flag: FlagResponse) => (
+              {flagsData?.data?.map((flag: FlagResponse) => (
                 <Card key={flag.flagId}>
                   <CardHeader>
                     <div className="flex items-center justify-between">
@@ -132,44 +170,18 @@ export default function Moderation() {
                       </div>
                     )}
 
-                    {flag.status === 'open' && (
-                      <div className="flex space-x-2">
-                        <Button
-                          size="sm"
-                          onClick={() => handleFlagAction(flag.flagId, 'under_review')}
-                          disabled={actionFlagMutation.isPending}
-                        >
-                          Review
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="destructive"
-                          onClick={() => handleFlagAction(flag.flagId, 'approved', 'Content removed for policy violation')}
-                          disabled={actionFlagMutation.isPending}
-                        >
-                          Approve & Remove
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleFlagAction(flag.flagId, 'rejected', 'No policy violation found')}
-                          disabled={actionFlagMutation.isPending}
-                        >
-                          Reject
-                        </Button>
-                      </div>
-                    )}
-
-                    <Button asChild variant="outline" size="sm">
-                      <Link to={`/moderation/flags/${flag.flagId}`}>
-                        View Details
-                      </Link>
-                    </Button>
+                    <ActionFlagWrapper flag={flag}>
+                      <Button asChild variant="outline" size="sm">
+                        <Link to={`/moderation/flags/${flag.flagId}`}>
+                          View Details
+                        </Link>
+                      </Button>
+                    </ActionFlagWrapper>
                   </CardContent>
                 </Card>
               ))}
 
-              {(flagsData as any)?.data?.length === 0 && (
+              {flagsData?.data?.length === 0 && (
                 <Card>
                   <CardContent className="text-center py-8">
                     <Flag className="h-12 w-12 text-muted-foreground mx-auto mb-4" />

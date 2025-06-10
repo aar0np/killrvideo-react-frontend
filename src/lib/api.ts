@@ -1,7 +1,7 @@
-
 import { ApiError } from '@/types/api';
+import { components } from '@/types/killrvideo-openapi-types';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1';
 
 class ApiClient {
   private baseUrl: string;
@@ -46,29 +46,33 @@ class ApiClient {
       throw error;
     }
 
+    if (response.status === 204) {
+      return {} as T;
+    }
+
     return response.json();
   }
 
   // Auth endpoints
-  async login(email: string, password: string) {
+  async login(credentials: components["schemas"]["UserLoginRequest"]): Promise<components["schemas"]["UserLoginResponse"]> {
     return this.request('/users/login', {
       method: 'POST',
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify(credentials),
     });
   }
 
-  async register(firstName: string, lastName: string, email: string, password: string) {
+  async register(userInfo: components["schemas"]["UserCreateRequest"]): Promise<components["schemas"]["UserCreateResponse"]> {
     return this.request('/users/register', {
       method: 'POST',
-      body: JSON.stringify({ firstName, lastName, email, password }),
+      body: JSON.stringify(userInfo),
     });
   }
 
-  async getProfile() {
+  async getProfile(): Promise<components["schemas"]["User"]> {
     return this.request('/users/me');
   }
 
-  async updateProfile(data: any) {
+  async updateProfile(data: components["schemas"]["UserProfileUpdateRequest"]): Promise<components["schemas"]["User"]> {
     return this.request('/users/me', {
       method: 'PUT',
       body: JSON.stringify(data),
@@ -76,146 +80,146 @@ class ApiClient {
   }
 
   // Video endpoints
-  async submitVideo(data: any) {
+  async submitVideo(data: components["schemas"]["VideoSubmitRequest"]): Promise<components["schemas"]["VideoDetailResponse"]> {
     return this.request('/videos', {
       method: 'POST',
       body: JSON.stringify(data),
     });
   }
 
-  async getVideo(videoId: string) {
+  async getVideo(videoId: string): Promise<components["schemas"]["VideoDetailResponse"]> {
     return this.request(`/videos/id/${videoId}`);
   }
 
-  async getVideoStatus(videoId: string) {
+  async getVideoStatus(videoId: string): Promise<components["schemas"]["VideoStatusResponse"]> {
     return this.request(`/videos/id/${videoId}/status`);
   }
 
-  async updateVideo(videoId: string, data: any) {
+  async updateVideo(videoId: string, data: components["schemas"]["VideoUpdateRequest"]): Promise<components["schemas"]["VideoDetailResponse"]> {
     return this.request(`/videos/id/${videoId}`, {
       method: 'PUT',
       body: JSON.stringify(data),
     });
   }
 
-  async recordView(videoId: string) {
+  async recordView(videoId: string): Promise<void> {
     return this.request(`/videos/id/${videoId}/view`, {
       method: 'POST',
     });
   }
 
-  async getLatestVideos(page: number = 1, pageSize: number = 10) {
+  async getLatestVideos(page: number = 1, pageSize: number = 10): Promise<components["schemas"]["PaginatedResponse_VideoSummary_"]> {
     return this.request(`/videos/latest?page=${page}&pageSize=${pageSize}`);
   }
 
-  async getVideosByTag(tag: string, page: number = 1, pageSize: number = 10) {
+  async getVideosByTag(tag: string, page: number = 1, pageSize: number = 10): Promise<components["schemas"]["PaginatedResponse_VideoSummary_"]> {
     return this.request(`/videos/by-tag/${tag}?page=${page}&pageSize=${pageSize}`);
   }
 
-  async getVideosByUser(userId: string, page: number = 1, pageSize: number = 10) {
+  async getVideosByUser(userId: string, page: number = 1, pageSize: number = 10): Promise<components["schemas"]["PaginatedResponse_VideoSummary_"]> {
     return this.request(`/videos/by-uploader/${userId}?page=${page}&pageSize=${pageSize}`);
   }
 
   // Comment endpoints
-  async addComment(videoId: string, text: string) {
+  async addComment(videoId: string, comment: components["schemas"]["CommentCreateRequest"]): Promise<components["schemas"]["CommentResponse"]> {
     return this.request(`/videos/${videoId}/comments`, {
       method: 'POST',
-      body: JSON.stringify({ text }),
+      body: JSON.stringify(comment),
     });
   }
 
-  async getComments(videoId: string, page: number = 1, pageSize: number = 10) {
+  async getComments(videoId: string, page: number = 1, pageSize: number = 10): Promise<components["schemas"]["PaginatedResponse"]> {
     return this.request(`/videos/${videoId}/comments?page=${page}&pageSize=${pageSize}`);
   }
 
-  async getCommentsByUser(userId: string, page: number = 1, pageSize: number = 10) {
+  async getCommentsByUser(userId: string, page: number = 1, pageSize: number = 10): Promise<components["schemas"]["PaginatedResponse"]> {
     return this.request(`/users/${userId}/comments?page=${page}&pageSize=${pageSize}`);
   }
 
   // Rating endpoints
-  async rateVideo(videoId: string, rating: number) {
+  async rateVideo(videoId: string, rating: components["schemas"]["RatingCreateOrUpdateRequest"]): Promise<components["schemas"]["RatingResponse"]> {
     return this.request(`/videos/${videoId}/ratings`, {
       method: 'POST',
-      body: JSON.stringify({ rating }),
+      body: JSON.stringify(rating),
     });
   }
 
-  async getRatings(videoId: string) {
+  async getRatings(videoId: string): Promise<components["schemas"]["AggregateRatingResponse"]> {
     return this.request(`/videos/${videoId}/ratings`);
   }
 
-  async getVideoRating(videoId: string) {
+  async getVideoRating(videoId: string): Promise<components["schemas"]["VideoRatingSummary"]> {
     return this.request(`/videos/id/${videoId}/rating`);
   }
 
   // Search endpoints
-  async searchVideos(params: any) {
-    const queryString = new URLSearchParams(params).toString();
+  async searchVideos(params: { query: string, page?: number, pageSize?: number }): Promise<components["schemas"]["PaginatedResponse_VideoSummary_"]> {
+    const queryString = new URLSearchParams(Object.entries(params).map(([key, value]) => [key, String(value)])).toString();
     return this.request(`/search/videos?${queryString}`);
   }
 
-  async getTagSuggestions(query: string, limit: number = 10) {
+  async getTagSuggestions(query: string, limit: number = 10): Promise<Array<components["schemas"]["TagSuggestion"]>> {
     return this.request(`/search/tags/suggest?query=${query}&limit=${limit}`);
   }
 
   // Recommendation endpoints
-  async getRelatedVideos(videoId: string, limit: number = 5) {
+  async getRelatedVideos(videoId: string, limit: number = 5): Promise<Array<components["schemas"]["RecommendationItem"]>> {
     return this.request(`/videos/id/${videoId}/related?limit=${limit}`);
   }
 
-  async getPersonalizedRecommendations(page: number = 1, pageSize: number = 10) {
+  async getPersonalizedRecommendations(page: number = 1, pageSize: number = 10): Promise<components["schemas"]["PaginatedResponse_VideoSummary_"]> {
     return this.request(`/recommendations/foryou?page=${page}&pageSize=${pageSize}`);
   }
 
   // Moderation endpoints
-  async flagContent(data: any) {
+  async flagContent(data: components["schemas"]["FlagCreateRequest"]): Promise<components["schemas"]["FlagResponse"]> {
     return this.request('/flags', {
       method: 'POST',
       body: JSON.stringify(data),
     });
   }
 
-  async getModerationFlags(status?: string, page: number = 1, pageSize: number = 10) {
+  async getModerationFlags(status?: components["schemas"]["FlagStatusEnum"], page: number = 1, pageSize: number = 10): Promise<components["schemas"]["PaginatedResponse_FlagResponse_"]> {
     const params = new URLSearchParams({ page: page.toString(), pageSize: pageSize.toString() });
     if (status) params.append('status', status);
     return this.request(`/moderation/flags?${params.toString()}`);
   }
 
-  async getFlagDetails(flagId: string) {
+  async getFlagDetails(flagId: string): Promise<components["schemas"]["FlagResponse"]> {
     return this.request(`/moderation/flags/${flagId}`);
   }
 
-  async actionFlag(flagId: string, status: string, moderatorNotes?: string) {
+  async actionFlag(flagId: string, data: components["schemas"]["FlagUpdateRequest"]): Promise<components["schemas"]["FlagResponse"]> {
     return this.request(`/moderation/flags/${flagId}/action`, {
       method: 'POST',
-      body: JSON.stringify({ status, moderatorNotes }),
+      body: JSON.stringify(data),
     });
   }
 
-  async searchUsers(query?: string) {
+  async searchUsers(query?: string): Promise<Array<components["schemas"]["User"]>> {
     const params = query ? `?q=${encodeURIComponent(query)}` : '';
     return this.request(`/moderation/users${params}`);
   }
 
-  async assignModerator(userId: string) {
+  async assignModerator(userId: string): Promise<components["schemas"]["User"]> {
     return this.request(`/moderation/users/${userId}/assign-moderator`, {
       method: 'POST',
     });
   }
 
-  async revokeModerator(userId: string) {
+  async revokeModerator(userId: string): Promise<components["schemas"]["User"]> {
     return this.request(`/moderation/users/${userId}/revoke-moderator`, {
       method: 'POST',
     });
   }
 
-  async restoreVideo(videoId: string) {
+  async restoreVideo(videoId: string): Promise<components["schemas"]["ContentRestoreResponse"]> {
     return this.request(`/moderation/videos/${videoId}/restore`, {
       method: 'POST',
     });
   }
 
-  async restoreComment(commentId: string) {
+  async restoreComment(commentId: string): Promise<components["schemas"]["ContentRestoreResponse"]> {
     return this.request(`/moderation/comments/${commentId}/restore`, {
       method: 'POST',
     });
