@@ -87,13 +87,13 @@ const Trending = () => {
                     <VideoCard
                       id={video.videoId}
                       title={video.title}
-                      creator={`${video.uploader.firstName} ${video.uploader.lastName}`.trim()}
+                      creator={`User ${video.userId}`}
                       thumbnail={video.thumbnailUrl}
-                      duration={video.duration || "0:00"}
-                      views={video.views}
+                      duration="0:00"
+                      views={video.viewCount}
                       rating={video.averageRating}
-                      tags={video.tags}
-                      uploadDate={video.addedAt}
+                      tags={[]}
+                      uploadDate={video.submittedAt}
                     />
                   </div>
                 ))}
