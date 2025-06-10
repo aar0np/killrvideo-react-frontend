@@ -1,3 +1,4 @@
+
 import { ApiError } from '@/types/api';
 import { components } from '@/types/killrvideo-openapi-types';
 
@@ -231,5 +232,3 @@ class ApiClient {
 }
 
 export const apiClient = new ApiClient(API_BASE_URL);
-
-}
