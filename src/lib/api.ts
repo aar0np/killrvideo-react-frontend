@@ -112,6 +112,10 @@ class ApiClient {
     return this.request(`/videos/latest?page=${page}&pageSize=${pageSize}`);
   }
 
+  async getTrendingVideos(days: number = 1, limit: number = 10): Promise<components["schemas"]["PaginatedResponse_VideoSummary_"]> {
+    return this.request(`/videos/trending?days=${days}&limit=${limit}`);
+  }
+
   async getVideosByTag(tag: string, page: number = 1, pageSize: number = 10): Promise<components["schemas"]["PaginatedResponse_VideoSummary_"]> {
     return this.request(`/videos/by-tag/${tag}?page=${page}&pageSize=${pageSize}`);
   }
@@ -227,3 +231,5 @@ class ApiClient {
 }
 
 export const apiClient = new ApiClient(API_BASE_URL);
+
+}

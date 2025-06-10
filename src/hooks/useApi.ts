@@ -18,6 +18,13 @@ export const useLatestVideos = (page: number = 1, pageSize: number = 10) => {
   });
 };
 
+export const useTrendingVideos = (days: number = 1, limit: number = 10) => {
+  return useQuery({
+    queryKey: ['videos', 'trending', days, limit],
+    queryFn: () => apiClient.getTrendingVideos(days, limit),
+  });
+};
+
 export const useVideo = (videoId: string) => {
   return useQuery({
     queryKey: ['videos', videoId],
