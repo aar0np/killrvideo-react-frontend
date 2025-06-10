@@ -13,8 +13,19 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const { data: profile, isLoading } = useProfile();
   const token = (typeof window !== 'undefined') ? localStorage.getItem('auth_token') : null;
-  const user = token ? (profile as User | null) : null;
-  const isAuthenticated = !!token && !!user && !isLoading;
+  // Attempt to hydrate user from cache/localStorage for instant UI feedback
+  let initialUser: User | null = null;
+  if (typeof window !== 'undefined') {
+    const stored = localStorage.getItem('auth_user');
+    if (stored) {
+      try {
+        initialUser = JSON.parse(stored);
+      } catch {}
+    }
+  }
+
+  const user = token ? ((profile as User | null) ?? initialUser) : null;
+  const isAuthenticated = !!token && !!user;
 
   return (
     <AuthContext.Provider value={{ user, isLoading, isAuthenticated }}>

@@ -180,9 +180,9 @@ export const useLogin = () => {
     onSuccess: (data: any) => {
       if (data.token) {
         apiClient.setToken(data.token);
-        // Prime the profile cache with the user data from the login response so the
-        // UI updates immediately without waiting for a /users/me round-trip.
+        // Prime cache and localStorage with the new user
         if (data.user) {
+          localStorage.setItem('auth_user', JSON.stringify(data.user));
           queryClient.setQueryData(['user', 'profile'], data.user);
         } else {
           queryClient.invalidateQueries({ queryKey: ['user', 'profile'] });
@@ -201,9 +201,8 @@ export const useRegister = () => {
     onSuccess: (data: any) => {
       if (data.token) {
         apiClient.setToken(data.token);
-        // Prime the profile cache with the user data from the register response so the
-        // UI updates immediately without waiting for a /users/me round-trip.
         if (data.user) {
+          localStorage.setItem('auth_user', JSON.stringify(data.user));
           queryClient.setQueryData(['user', 'profile'], data.user);
         } else {
           queryClient.invalidateQueries({ queryKey: ['user', 'profile'] });
