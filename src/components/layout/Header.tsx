@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -8,11 +7,13 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Search, Upload, User, LogOut, Shield } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { apiClient } from '@/lib/api';
+import { useQueryClient } from '@tanstack/react-query';
 
 export default function Header() {
   const [searchQuery, setSearchQuery] = useState('');
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuth();
+  const queryClient = useQueryClient();
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -23,7 +24,8 @@ export default function Header() {
 
   const handleLogout = () => {
     apiClient.clearToken();
-    navigate('/auth');
+    queryClient.removeQueries({ queryKey: ['user', 'profile'] });
+    navigate('/');
   };
 
   const getUserInitials = (user: any) => {
