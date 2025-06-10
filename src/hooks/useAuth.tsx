@@ -1,4 +1,3 @@
-
 import { createContext, useContext, ReactNode } from 'react';
 import { useProfile } from './useApi';
 import { User } from '@/types/api';
@@ -13,8 +12,9 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const { data: profile, isLoading } = useProfile();
-  const user = profile as User | null;
-  const isAuthenticated = !!user && !isLoading;
+  const token = (typeof window !== 'undefined') ? localStorage.getItem('auth_token') : null;
+  const user = token ? (profile as User | null) : null;
+  const isAuthenticated = !!token && !!user && !isLoading;
 
   return (
     <AuthContext.Provider value={{ user, isLoading, isAuthenticated }}>

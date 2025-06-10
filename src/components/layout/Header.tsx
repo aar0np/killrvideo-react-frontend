@@ -24,6 +24,7 @@ export default function Header() {
 
   const handleLogout = () => {
     apiClient.clearToken();
+    queryClient.setQueryData(['user', 'profile'], null);
     queryClient.clear();
     navigate('/');
   };

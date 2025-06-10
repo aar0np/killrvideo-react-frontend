@@ -42,6 +42,10 @@ class ApiClient {
     });
 
     if (!response.ok) {
+      if (response.status === 401) {
+        // Token expired or invalid – clear it so the UI reflects logged-out state
+        this.clearToken();
+      }
       const error: ApiError = await response.json();
       throw error;
     }
