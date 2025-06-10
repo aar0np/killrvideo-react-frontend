@@ -1,4 +1,3 @@
-
 import { ApiError } from '@/types/api';
 import { components } from '@/types/killrvideo-openapi-types';
 
@@ -113,8 +112,8 @@ class ApiClient {
     return this.request(`/videos/latest?page=${page}&pageSize=${pageSize}`);
   }
 
-  async getTrendingVideos(days: number = 1, limit: number = 10): Promise<components["schemas"]["PaginatedResponse_VideoSummary_"]> {
-    return this.request(`/videos/trending?days=${days}&limit=${limit}`);
+  async getTrendingVideos(days: number = 1, limit: number = 10): Promise<Array<components["schemas"]["VideoSummary"]>> {
+    return this.request(`/videos/trending?intervalDays=${days}&limit=${limit}`);
   }
 
   async getVideosByTag(tag: string, page: number = 1, pageSize: number = 10): Promise<components["schemas"]["PaginatedResponse_VideoSummary_"]> {

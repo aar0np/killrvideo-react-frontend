@@ -1,22 +1,18 @@
 
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
 import Layout from '@/components/layout/Layout';
 import VideoCard from '@/components/video/VideoCard';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { TrendingUp } from 'lucide-react';
-import { apiClient } from '@/lib/api';
+import { useTrendingVideos } from '@/hooks/useApi';
 
 type TimePeriod = '1' | '7' | '30';
 
 const Trending = () => {
   const [timePeriod, setTimePeriod] = useState<TimePeriod>('1');
 
-  const { data: trendingData, isLoading, error } = useQuery({
-    queryKey: ['trending', timePeriod],
-    queryFn: () => apiClient.getTrendingVideos(parseInt(timePeriod), 10),
-  });
+  const { data: trendingData, isLoading, error } = useTrendingVideos(parseInt(timePeriod), 10);
 
   const getTimePeriodLabel = (period: TimePeriod) => {
     switch (period) {
@@ -77,9 +73,9 @@ const Trending = () => {
 
         {trendingData && (
           <>
-            {trendingData.data && trendingData.data.length > 0 ? (
+            {trendingData.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {trendingData.data.map((video, index) => (
+                {trendingData.map((video, index) => (
                   <div key={video.videoId} className="relative">
                     <div className="absolute top-2 left-2 z-10 bg-primary text-primary-foreground rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold">
                       #{index + 1}
