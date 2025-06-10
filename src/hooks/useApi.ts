@@ -271,6 +271,7 @@ export const useLogin = () => {
         } else {
           queryClient.invalidateQueries({ queryKey: ['user', 'profile'] });
         }
+        apiClient.setUserId(data.userId);
       }
     },
   });

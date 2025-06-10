@@ -1,15 +1,22 @@
 import { ApiError } from '@/types/api';
 import { components } from '@/types/killrvideo-openapi-types';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1';
+//const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://localhost:8443/api/v1';
+const API_BASE_URL = 'https://localhost:8443/api/v1';
 
 class ApiClient {
   private baseUrl: string;
   private token: string | null = null;
+  private userId: string;
 
   constructor(baseUrl: string) {
     this.baseUrl = baseUrl;
     this.token = localStorage.getItem('auth_token');
+  }
+
+  setUserId(userId: string) {
+    this.userId = userId;
+    localStorage.setItem('user_id', userId);
   }
 
   setToken(token: string) {
@@ -65,6 +72,11 @@ class ApiClient {
       method: 'POST',
       body: JSON.stringify(credentials),
     });
+
+    //setUserId(response.userId);
+    //setToken(response.token);
+
+    return response;
   }
 
   async register(userInfo: components["schemas"]["UserCreateRequest"]): Promise<components["schemas"]["UserCreateResponse"]> {
@@ -75,11 +87,11 @@ class ApiClient {
   }
 
   async getProfile(): Promise<components["schemas"]["User"]> {
-    return this.request('/users/me');
+    return this.request(`/users/${this.userId}`);
   }
 
   async updateProfile(data: components["schemas"]["UserProfileUpdateRequest"]): Promise<components["schemas"]["User"]> {
-    return this.request('/users/me', {
+    return this.request(`/users/${this.userId}`, {
       method: 'PUT',
       body: JSON.stringify(data),
     });

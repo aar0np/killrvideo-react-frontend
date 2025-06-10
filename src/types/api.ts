@@ -3,8 +3,9 @@
 export interface User {
   firstName: string;
   lastName: string;
-  email: string;
   userId: string;
+  username: string;
+  email: string;
   createdDate: string;
   accountStatus: string;
   lastLoginDate?: string;
