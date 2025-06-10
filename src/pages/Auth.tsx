@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 
 export default function Auth() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [loginForm, setLoginForm] = useState({ email: '', password: '' });
   const [registerForm, setRegisterForm] = useState({ 
     firstName: '', 
@@ -31,6 +32,7 @@ export default function Auth() {
     try {
       await loginMutation.mutateAsync(loginForm);
       toast.success('Login successful!');
+      navigate('/');
     } catch (error: any) {
       toast.error(error.detail || 'Login failed');
     }
@@ -45,6 +47,7 @@ export default function Auth() {
     try {
       await registerMutation.mutateAsync(registerForm);
       toast.success('Registration successful!');
+      navigate('/');
     } catch (error: any) {
       toast.error(error.detail || 'Registration failed');
     }
