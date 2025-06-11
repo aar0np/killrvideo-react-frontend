@@ -106,6 +106,14 @@ export const useVideoRating = (videoId: string) => {
   });
 };
 
+export const useAggregateRating = (videoId: string) => {
+  return useQuery({
+    queryKey: ['aggregate-rating', videoId],
+    queryFn: () => apiClient.getRatings(videoId),
+    enabled: !!videoId,
+  });
+};
+
 export const useRateVideo = (videoId: string) => {
   const queryClient = useQueryClient();
   return useMutation({
