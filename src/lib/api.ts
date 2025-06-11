@@ -15,11 +15,13 @@ class ApiClient {
   setToken(token: string) {
     this.token = token;
     localStorage.setItem('auth_token', token);
+    window.dispatchEvent(new Event('auth-change'));
   }
 
   clearToken() {
     this.token = null;
     localStorage.removeItem('auth_token');
+    window.dispatchEvent(new Event('auth-change'));
   }
 
   private async request<T>(
@@ -161,8 +163,10 @@ class ApiClient {
   }
 
   // Search endpoints
-  async searchVideos(params: { query: string, page?: number, pageSize?: number }): Promise<components["schemas"]["PaginatedResponse_VideoSummary_"]> {
-    const queryString = new URLSearchParams(Object.entries(params).map(([key, value]) => [key, String(value)])).toString();
+  async searchVideos(params: { query: string; page?: number; pageSize?: number }): Promise<components["schemas"]["PaginatedResponse_VideoSummary_"]> {
+    const queryString = new URLSearchParams(
+      Object.entries(params).map(([key, value]) => [key, String(value)])
+    ).toString();
     return this.request(`/search/videos?${queryString}`);
   }
 
@@ -187,7 +191,11 @@ class ApiClient {
     });
   }
 
-  async getModerationFlags(status?: components["schemas"]["FlagStatusEnum"], page: number = 1, pageSize: number = 10): Promise<components["schemas"]["PaginatedResponse_FlagResponse_"]> {
+  async getModerationFlags(
+    status?: components["schemas"]["FlagStatusEnum"],
+    page: number = 1,
+    pageSize: number = 10
+  ): Promise<components["schemas"]["PaginatedResponse_FlagResponse_"]> {
     const params = new URLSearchParams({ page: page.toString(), pageSize: pageSize.toString() });
     if (status) params.append('status', status);
     return this.request(`/moderation/flags?${params.toString()}`);
