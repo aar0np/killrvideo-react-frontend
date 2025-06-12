@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Clock, Eye, Star } from 'lucide-react';
@@ -10,8 +11,8 @@ interface VideoCardProps {
   creator: string;
   thumbnail: string;
   duration: string;
-  views?: number | null;
-  rating?: number | null;
+  views: number;
+  rating: number;
   tags: string[];
   uploadDate: string;
 }
@@ -29,10 +30,9 @@ const VideoCard = ({
 }: VideoCardProps) => {
   const [imageLoaded, setImageLoaded] = useState(false);
 
-  const formatViews = (raw?: number | null) => {
-    const num = raw ?? 0;
-    if (num >= 1_000_000) return `${(num / 1_000_000).toFixed(1)}M`;
-    if (num >= 1_000) return `${(num / 1_000).toFixed(1)}K`;
+  const formatViews = (num: number) => {
+    if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
+    if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
     return num.toString();
   };
 
@@ -89,7 +89,7 @@ const VideoCard = ({
             </span>
             <span className="flex items-center">
               <Star className="w-4 h-4 mr-1 fill-accent text-accent" />
-              {typeof rating === 'number' ? rating.toFixed(1) : '--'}
+              {rating.toFixed(1)}
             </span>
           </div>
           <span>{getTimeAgo(uploadDate)}</span>

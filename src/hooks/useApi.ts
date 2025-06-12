@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api';
 import { 
@@ -76,8 +75,6 @@ export const useUpdateVideo = () => {
 export const useRecordView = () => {
   return useMutation({
     mutationFn: (videoId: string) => apiClient.recordView(videoId),
-    retry: false,
-    onError: () => {},
   });
 };
 
@@ -87,14 +84,6 @@ export const useComments = (videoId: string, page: number = 1, pageSize: number 
     queryKey: ['comments', videoId, page, pageSize],
     queryFn: () => apiClient.getComments(videoId, page, pageSize),
     enabled: !!videoId,
-  });
-};
-
-export const useCommentsByUser = (userId: string, page: number = 1, pageSize: number = 10) => {
-  return useQuery({
-    queryKey: ['comments', 'user', userId, page, pageSize],
-    queryFn: () => apiClient.getCommentsByUser(userId, page, pageSize),
-    enabled: !!userId,
   });
 };
 
