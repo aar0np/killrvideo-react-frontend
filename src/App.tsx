@@ -10,6 +10,7 @@ import Watch from "./pages/Watch";
 import Auth from "./pages/Auth";
 import Creator from "./pages/Creator";
 import Trending from "./pages/Trending";
+import Profile from "./pages/Profile";
 import Moderation from "./pages/Moderation";
 import FlagDetail from "./pages/FlagDetail";
 import UserManagement from "./pages/UserManagement";
@@ -30,6 +31,7 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route path="/creator" element={<Creator />} />
             <Route path="/trending" element={<Trending />} />
+            <Route path="/profile" element={<Profile />} />
             <Route path="/moderation" element={<Moderation />} />
             <Route path="/moderation/flags/:flagId" element={<FlagDetail />} />
             <Route path="/moderation/users" element={<UserManagement />} />

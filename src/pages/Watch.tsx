@@ -1,5 +1,5 @@
 import { useParams } from 'react-router-dom';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useRef } from 'react';
 import {
   useVideo,
   useRecordView,
@@ -15,7 +15,8 @@ import StarRating from '@/components/StarRating';
 import RelatedVideos from '@/components/video/RelatedVideos';
 
 // Utilities
-const formatNumber = (num: number) => {
+const formatNumber = (raw?: number | null) => {
+  const num = raw ?? 0;
   if (num >= 1_000_000) return `${(num / 1_000_000).toFixed(1)}M`;
   if (num >= 1_000) return `${(num / 1_000).toFixed(1)}K`;
   return num.toString();
@@ -38,14 +39,18 @@ const Watch = () => {
 
   const userRating = aggregateRating?.currentUserRating ?? 0;
 
-  // Record a view when the video details arrive the first time
+  // ---------------------------------------------------------------
+
+  // Record a view exactly once per mount after video data is available
+  const hasRecordedRef = useRef(false);
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
-    if (video && id) {
+    if (!hasRecordedRef.current && video && id) {
+      hasRecordedRef.current = true;
       recordView.mutate(id);
     }
-  }, [video, id, recordView]);
-
-  // ---------------------------------------------------------------
+  }, [video, id]);
 
   return (
     <Layout>
@@ -54,17 +59,23 @@ const Watch = () => {
           {/* Main Video Section */}
           <div className="lg:col-span-2">
             {/* Video Player */}
-            <div className="aspect-video mb-6 bg-black rounded-lg overflow-hidden">
-              <iframe
-                width="100%"
-                height="100%"
-                src={`https://www.youtube.com/embed/${video?.youtubeVideoId ?? ''}`}
-                title={video?.title ?? 'Video player'}
-                frameBorder="0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-                className="w-full h-full"
-              ></iframe>
+            <div className="aspect-video mb-6 bg-black rounded-lg overflow-hidden flex items-center justify-center">
+              {videoLoading ? (
+                <div className="w-full h-full bg-gray-200 animate-pulse" />
+              ) : video?.youtubeVideoId ? (
+                <iframe
+                  width="100%"
+                  height="100%"
+                  src={`https://www.youtube.com/embed/${video.youtubeVideoId}`}
+                  title={video.title ?? 'Video player'}
+                  frameBorder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                  className="w-full h-full"
+                ></iframe>
+              ) : (
+                <p className="text-white text-center p-4">Video unavailable.</p>
+              )}
             </div>
 
             {/* Video Info */}
