@@ -1,10 +1,12 @@
-
 // Core data types based on updated OpenAPI spec
 export interface User {
   firstName: string;
   lastName: string;
+<<<<<<< HEAD
   userId: string;
   username: string;
+=======
+>>>>>>> 6f12922 (adjustments for latest videos integration)
   email: string;
   createdDate: string;
   accountStatus: string;
@@ -37,15 +39,15 @@ export interface VideoDetailResponse {
 }
 
 export interface VideoSummary {
-  videoId: string;
+  video_id: string;
   title: string;
-  thumbnailUrl?: string;
-  userId: string;
-  submittedAt: string;
+  thumbnail_url?: string;
+  user_id: string;
+  submitted_at: string;
   content_rating?: string;
   category?: string;
-  viewCount: number;
-  averageRating?: number;
+  view_count: number;
+  average_rating?: number;
 }
 
 export interface CommentResponse {

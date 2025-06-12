@@ -1,8 +1,7 @@
 import { ApiError } from '@/types/api';
 import { components } from '@/types/killrvideo-openapi-types';
 
-//const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://localhost:8443/api/v1';
-const API_BASE_URL = 'https://localhost:8443/api/v1';
+const API_BASE_URL = '/api/v1';
 
 class ApiClient {
   private baseUrl: string;
@@ -45,10 +44,12 @@ class ApiClient {
       headers['Authorization'] = `Bearer ${this.token}`;
     }
 
-    const response = await fetch(url, {
-      ...options,
-      headers,
-    });
+    try {
+      const response = await fetch(url, {
+        ...options,
+        headers,
+        credentials: 'include',
+      });
 
     if (!response.ok) {
       if (response.status === 401) {
@@ -59,11 +60,15 @@ class ApiClient {
       throw error;
     }
 
-    if (response.status === 204) {
-      return {} as T;
-    }
+      if (response.status === 204) {
+        return {} as T;
+      }
 
-    return response.json();
+      return response.json();
+    } catch (error) {
+      console.error('API request failed:', { url, error });
+      throw error;
+    }
   }
 
   // Auth endpoints
@@ -72,11 +77,6 @@ class ApiClient {
       method: 'POST',
       body: JSON.stringify(credentials),
     });
-
-    //setUserId(response.userId);
-    //setToken(response.token);
-
-    return response;
   }
 
   async register(userInfo: components["schemas"]["UserCreateRequest"]): Promise<components["schemas"]["UserCreateResponse"]> {
@@ -127,7 +127,7 @@ class ApiClient {
   }
 
   async getLatestVideos(page: number = 1, pageSize: number = 10): Promise<components["schemas"]["PaginatedResponse_VideoSummary_"]> {
-    return this.request(`/videos/latest?page=${page}&pageSize=${pageSize}`);
+    return this.request(`/videos/latest/page/${page}/page_size/${pageSize}`);
   }
 
   async getTrendingVideos(days: number = 1, limit: number = 10): Promise<Array<components["schemas"]["VideoSummary"]>> {

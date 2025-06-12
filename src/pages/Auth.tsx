@@ -1,5 +1,9 @@
 import { useState } from 'react';
+<<<<<<< HEAD
 import { Navigate, useNavigate } from 'react-router-dom';
+=======
+import { useNavigate, Navigate } from 'react-router-dom';
+>>>>>>> 6f12922 (adjustments for latest videos integration)
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -20,6 +24,7 @@ export default function Auth() {
     password: '' 
   });
 
+  const navigate = useNavigate();
   const loginMutation = useLogin();
   const registerMutation = useRegister();
 
