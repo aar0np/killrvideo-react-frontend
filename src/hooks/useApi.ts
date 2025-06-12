@@ -76,6 +76,8 @@ export const useUpdateVideo = () => {
 export const useRecordView = () => {
   return useMutation({
     mutationFn: (videoId: string) => apiClient.recordView(videoId),
+    retry: false,
+    onError: () => {},
   });
 };
 
