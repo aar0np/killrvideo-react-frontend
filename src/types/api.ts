@@ -2,11 +2,8 @@
 export interface User {
   firstName: string;
   lastName: string;
-<<<<<<< HEAD
   userId: string;
   username: string;
-=======
->>>>>>> 6f12922 (adjustments for latest videos integration)
   email: string;
   createdDate: string;
   accountStatus: string;
@@ -39,6 +36,7 @@ export interface VideoDetailResponse {
 }
 
 export interface VideoSummary {
+  key: string;
   video_id: string;
   title: string;
   thumbnail_url?: string;

@@ -1,14 +1,5 @@
 import VideoCard from '@/components/video/VideoCard';
 import { useLatestVideos } from '@/hooks/useApi';
-<<<<<<< HEAD
-import { VideoSummary } from '@/types/api';
-
-const placeholderThumb = 'https://placehold.co/400x225?text=Video';
-
-const FeaturedVideos = () => {
-  const { data, isLoading, isError } = useLatestVideos(1, 9);
-  const videos = (data?.data ?? []) as VideoSummary[];
-=======
 import { VideoSummary, PaginatedResponse } from '@/types/api';
 
 const PLACEHOLDER_THUMB = 'https://via.placeholder.com/400x225';
@@ -25,6 +16,7 @@ interface ApiVideoResponse {
 }
 
 const mapApiResponseToVideoSummary = (video: ApiVideoResponse): VideoSummary => ({
+  key: video.video_id,
   video_id: video.video_id,
   title: video.title,
   thumbnail_url: video.thumbnail_url,
@@ -40,13 +32,12 @@ const FeaturedVideos = () => {
   console.log('videosData == ', videosData);
   
   const videos = [];
-  for (const videoA of videosData) {
-    //console.log('videoA == ', videoA);
-    videos.push(mapApiResponseToVideoSummary(videoA));
+  if (videosData) {
+    for (const videoA of videosData) {
+      //console.log('videoA == ', videoA);
+      videos.push(mapApiResponseToVideoSummary(videoA));
+    }
   }
-
-//  console.log('videosData.length == ', videosData.length);
-  console.log('videos.length == ', videos.length);
 
   if (isLoading) {
     return (
@@ -97,7 +88,6 @@ const FeaturedVideos = () => {
     );
   }
 
->>>>>>> 6f12922 (adjustments for latest videos integration)
   return (
     <section className="py-16 bg-white">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -110,10 +100,9 @@ const FeaturedVideos = () => {
           </p>
         </div>
 
-<<<<<<< HEAD
         {isLoading ? (
           <p className="text-center">Loading...</p>
-        ) : isError ? (
+        ) : error ? (
           <p className="text-center text-red-500">Failed to load videos.</p>
         ) : videos.length === 0 ? (
           <p className="text-center text-muted-foreground">No videos available.</p>
@@ -125,7 +114,7 @@ const FeaturedVideos = () => {
                 id={video.videoId}
                 title={video.title}
                 creator={video.userId}
-                thumbnail={video.thumbnailUrl || placeholderThumb}
+                thumbnail={video.thumbnailUrl || PLACEHOLDER_THUMB}
                 duration=""
                 views={((video as any).views ?? (video as any).viewCount) as number}
                 rating={video.averageRating ?? 0}
@@ -135,30 +124,6 @@ const FeaturedVideos = () => {
             ))}
           </div>
         )}
-=======
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {videos.map((video) => (
-            <VideoCard
-              key={video.video_id}
-              id={video.video_id}
-              title={video.title}
-              creator={video.user_id}
-              thumbnail={video.thumbnail_url || PLACEHOLDER_THUMB}
-              duration=""
-              views={video.view_count}
-              rating={video.average_rating ?? 0}
-              tags={[]} // Tags not available in summary
-              uploadDate={video.submitted_at}
-            />
-          ))}
-        </div>
->>>>>>> 6f12922 (adjustments for latest videos integration)
-
-        <div className="text-center mt-12">
-          <button className="font-noto text-primary hover:text-purple-800 font-semibold text-lg transition-colors">
-            View All Videos →
-          </button>
-        </div>
       </div>
     </section>
   );
