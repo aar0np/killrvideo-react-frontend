@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api';
 import { 
@@ -74,10 +73,33 @@ export const useUpdateVideo = () => {
 };
 
 export const useRecordView = () => {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (videoId: string) => apiClient.recordView(videoId),
-    retry: false,
-    onError: () => {},
+    retry: false, // do not retry on failure to avoid spamming the backend
+    onMutate: async (videoId: string) => {
+      await queryClient.cancelQueries({ queryKey: ['videos', videoId] });
+
+      const previousVideo: any = queryClient.getQueryData(['videos', videoId]);
+
+      if (previousVideo) {
+        queryClient.setQueryData(['videos', videoId], {
+          ...previousVideo,
+          views: ((previousVideo as any).views ?? (previousVideo as any).viewCount ?? 0) + 1,
+        });
+      }
+
+      return { previousVideo };
+    },
+    onError: (_err, videoId, context) => {
+      if (context?.previousVideo) {
+        queryClient.setQueryData(['videos', videoId], context.previousVideo);
+      }
+    },
+    onSuccess: (_data, videoId) => {
+      // Ensure fresh data after the optimistic update
+      queryClient.invalidateQueries({ queryKey: ['videos', videoId] });
+    },
   });
 };
 
@@ -129,9 +151,52 @@ export const useRateVideo = (videoId: string) => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (rating: number) => apiClient.rateVideo(videoId, { rating }),
+    onMutate: async (rating: number) => {
+      // Cancel any ongoing fetches for this aggregate rating
+      await queryClient.cancelQueries({ queryKey: ['aggregate-rating', videoId] });
+
+      // Snapshot current cache values
+      const previousAgg: any = queryClient.getQueryData(['aggregate-rating', videoId]);
+      const previousVideo: any = queryClient.getQueryData(['videos', videoId]);
+
+      // Build a new optimistic aggregate rating object
+      const totalCount = previousAgg?.totalRatingsCount ?? 0;
+      const newAgg = previousAgg
+        ? {
+            ...previousAgg,
+            currentUserRating: rating,
+            averageRating: previousAgg.averageRating
+              ? ((previousAgg.averageRating * totalCount - (previousAgg.currentUserRating || 0) + rating) / totalCount)
+              : rating,
+          }
+        : {
+            videoId,
+            currentUserRating: rating,
+            averageRating: rating,
+            totalRatingsCount: 1,
+          };
+
+      // Apply optimistic updates
+      queryClient.setQueryData(['aggregate-rating', videoId], newAgg);
+      if (previousVideo) {
+        queryClient.setQueryData(['videos', videoId], {
+          ...previousVideo,
+          averageRating: newAgg.averageRating,
+        });
+      }
+
+      return { previousAgg, previousVideo };
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['ratings', videoId] });
-      queryClient.invalidateQueries({ queryKey: ['video', videoId] });
+      // Refresh aggregate rating and video detail queries so UI updates immediately
+      queryClient.invalidateQueries({ queryKey: ['aggregate-rating', videoId] });
+      queryClient.invalidateQueries({ queryKey: ['videos', videoId] });
+    },
+    onError: (_err, _newRating, context) => {
+      // Revert on error
+      if (context?.previousAgg) {
+        queryClient.setQueryData(['aggregate-rating', videoId], context.previousAgg);
+      }
     },
   });
 };

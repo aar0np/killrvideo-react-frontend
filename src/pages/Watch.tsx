@@ -5,6 +5,7 @@ import {
   useRecordView,
   useAggregateRating,
   useRateVideo,
+  useVideoRating,
 } from '@/hooks/useApi';
 import Layout from '@/components/layout/Layout';
 import { Star, Eye, Clock, Flag } from 'lucide-react';
@@ -36,8 +37,11 @@ const Watch = () => {
   // Rating queries / mutations
   const { data: aggregateRating } = useAggregateRating(id || '');
   const rateVideo = useRateVideo(id || '');
+  const { data: ratingSummary } = useVideoRating(id || '');
 
   const userRating = aggregateRating?.currentUserRating ?? 0;
+  const averageRatingDisplay =
+    ratingSummary?.averageRating ?? aggregateRating?.averageRating ?? video?.averageRating ?? 0;
 
   // ---------------------------------------------------------------
 
@@ -88,7 +92,7 @@ const Watch = () => {
                 <div className="flex items-center space-x-6 text-gray-600 font-noto">
                   <span className="flex items-center">
                     <Eye className="w-4 h-4 mr-1" />
-                    {video ? formatNumber(video.viewCount) + ' views' : ''}
+                    {video ? formatNumber((video as any).views ?? (video as any).viewCount) + ' views' : ''}
                   </span>
                   <span className="flex items-center">
                     <Clock className="w-4 h-4 mr-1" />
@@ -97,7 +101,7 @@ const Watch = () => {
                   </span>
                   <span className="flex items-center">
                     <Star className="w-4 h-4 mr-1 fill-accent text-accent" />
-                    {(aggregateRating?.averageRating ?? video?.averageRating ?? 0).toFixed(1)} rating
+                    {averageRatingDisplay.toFixed(1)} rating
                   </span>
                 </div>
                 

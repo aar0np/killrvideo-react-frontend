@@ -94,7 +94,7 @@ export default function Creator() {
   };
 
   // Calculate stats
-  const totalViews = videos.reduce((sum, video) => sum + video.viewCount, 0);
+  const totalViews = videos.reduce((sum, video) => sum + (((video as any).views ?? (video as any).viewCount) as number), 0);
   const totalVideos = videos.length;
   const avgRating = videos.reduce((sum, video) => sum + (video.averageRating || 0), 0) / totalVideos || 0;
 
@@ -280,7 +280,7 @@ export default function Creator() {
                           <div className="flex items-center gap-4 text-sm text-muted-foreground">
                             <div className="flex items-center gap-1">
                               <Eye className="h-4 w-4" />
-                              {video.viewCount} views
+                              {((video as any).views ?? (video as any).viewCount) as number} views
                             </div>
                             {video.averageRating && (
                               <div className="flex items-center gap-1">

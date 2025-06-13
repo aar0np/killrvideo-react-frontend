@@ -77,7 +77,10 @@ const CommentsSection = ({ videoId }: CommentsSectionProps) => {
               <div className="flex items-start justify-between mb-2">
                 <div className="flex items-center space-x-2">
                   <h4 className="font-noto font-semibold text-gray-900">
-                    {comment.userid}
+                    {/* Prefer backend-supplied name fields if available */}
+                    {('firstName' in comment && comment.firstName)
+                      ? `${(comment as any).firstName} ${(comment as any).lastName ?? ''}`.trim()
+                      : comment.userid.substring(0, 8)}
                   </h4>
                   <Badge
                     className={`text-xs ${getSentimentBadgeClasses(comment.sentiment_score)}`}

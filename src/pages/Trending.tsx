@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import Layout from '@/components/layout/Layout';
 import VideoCard from '@/components/video/VideoCard';
@@ -86,7 +85,7 @@ const Trending = () => {
                       creator={`User ${video.userId}`}
                       thumbnail={video.thumbnailUrl}
                       duration="0:00"
-                      views={video.viewCount}
+                      views={((video as any).views ?? (video as any).viewCount) as number}
                       rating={video.averageRating}
                       tags={[]}
                       uploadDate={video.submittedAt}
