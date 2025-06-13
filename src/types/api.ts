@@ -37,15 +37,15 @@ export interface VideoDetailResponse {
 
 export interface VideoSummary {
   key: string;
-  video_id: string;
+  videoId: string;
   title: string;
-  thumbnail_url?: string;
-  user_id: string;
-  submitted_at: string;
-  content_rating?: string;
+  thumbnailUrl?: string;
+  userId: string;
+  submittedAt: string;
+  contentRating?: string;
   category?: string;
-  view_count: number;
-  average_rating?: number;
+  viewCount: number;
+  averageRating?: number;
 }
 
 export interface CommentResponse {

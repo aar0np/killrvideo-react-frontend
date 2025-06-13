@@ -17,14 +17,14 @@ interface ApiVideoResponse {
 
 const mapApiResponseToVideoSummary = (video: ApiVideoResponse): VideoSummary => ({
   key: video.video_id,
-  video_id: video.video_id,
+  videoId: video.video_id,
   title: video.title,
-  thumbnail_url: video.thumbnail_url,
-  user_id: video.user_id,
-  submitted_at: video.upload_date,
-  content_rating: video.rating?.toString(),
+  thumbnailUrl: video.thumbnail_url,
+  userId: video.user_id,
+  submittedAt: video.upload_date,
+  contentRating: video.rating?.toString(),
   category: video.category,
-  view_count: video.views
+  viewCount: video.views
 });
 
 const FeaturedVideos = () => {
@@ -110,7 +110,7 @@ const FeaturedVideos = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {videos.map((video) => (
               <VideoCard
-                key={video.videoId}
+                key={video.key}
                 id={video.videoId}
                 title={video.title}
                 creator={video.userId}
