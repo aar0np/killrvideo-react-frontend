@@ -240,6 +240,11 @@ class ApiClient {
       method: 'POST',
     });
   }
+
+  // User endpoints
+  async getUser(userId: string): Promise<components["schemas"]["User"]> {
+    return this.request(`/users/${userId}`);
+  }
 }
 
 export const apiClient = new ApiClient(API_BASE_URL);

@@ -359,3 +359,12 @@ export const useRevokeModerator = () => {
     },
   });
 };
+
+// Generic single-user fetch (public)
+export const useUser = (userId: string) => {
+  return useQuery({
+    queryKey: ['user', userId],
+    queryFn: () => apiClient.getUser(userId),
+    enabled: !!userId,
+  });
+};
