@@ -257,9 +257,7 @@ class ApiClient {
 
   // User endpoints
   async getUser(userId: string): Promise<components["schemas"]["User"]> {
-    if (!userId) {
       return this.request(`/users/${userId}`);
-    }
   }
 }
 
