@@ -1,5 +1,7 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMemo } from 'react';
+import { useQuery, useMutation, useQueryClient, useQueries } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api';
+import { CACHE_STRATEGY } from '@/lib/constants';
 import {
   VideoDetailResponse,
   VideoSummary,
@@ -27,16 +29,8 @@ import { components } from '@/types/killrvideo-openapi-types';
 export const useLatestVideos = (page: number = 1, pageSize: number = 10) => {
   return useQuery({
     queryKey: ['videos', 'latest', page, pageSize],
-    queryFn: async () => {
-      try {
-        const response = await apiClient.getLatestVideos(page, pageSize);
-        console.log('Latest videos response:', response);
-        return response;
-      } catch (error) {
-        console.error('Error fetching latest videos:', error);
-        throw error;
-      }
-    },
+    queryFn: () => apiClient.getLatestVideos(page, pageSize),
+    staleTime: CACHE_STRATEGY.VIDEO,
   });
 };
 
@@ -44,6 +38,7 @@ export const useTrendingVideos = (days: number = 1, limit: number = 10) => {
   return useQuery({
     queryKey: ['videos', 'trending', days, limit],
     queryFn: () => apiClient.getTrendingVideos(days, limit),
+    staleTime: CACHE_STRATEGY.VIDEO,
   });
 };
 
@@ -52,6 +47,7 @@ export const useVideo = (videoId: string) => {
     queryKey: ['videos', videoId],
     queryFn: () => apiClient.getVideo(videoId),
     enabled: !!videoId,
+    staleTime: CACHE_STRATEGY.VIDEO,
   });
 };
 
@@ -60,6 +56,7 @@ export const useVideosByUser = (userId: string, page: number = 1, pageSize: numb
     queryKey: ['videos', 'user', userId, page, pageSize],
     queryFn: () => apiClient.getVideosByUser(userId, page, pageSize),
     enabled: !!userId,
+    staleTime: CACHE_STRATEGY.VIDEO,
   });
 };
 
@@ -68,6 +65,7 @@ export const useVideoStatus = (videoId: string) => {
     queryKey: ['videos', videoId, 'status'],
     queryFn: () => apiClient.getVideoStatus(videoId),
     enabled: !!videoId,
+    staleTime: CACHE_STRATEGY.SHORT,
   });
 };
 
@@ -132,6 +130,7 @@ export const useComments = (videoId: string, page: number = 1, pageSize: number 
     queryKey: ['comments', videoId, page, pageSize],
     queryFn: () => apiClient.getComments(videoId, page, pageSize),
     enabled: !!videoId,
+    staleTime: CACHE_STRATEGY.COMMENTS,
   });
 };
 
@@ -167,6 +166,7 @@ export const useAggregateRating = (videoId: string) => {
     queryKey: ['aggregate-rating', videoId],
     queryFn: () => apiClient.getRatings(videoId),
     enabled: !!videoId,
+    staleTime: CACHE_STRATEGY.RATINGS,
   });
 };
 
@@ -183,14 +183,27 @@ export const useRateVideo = (videoId: string) => {
       const previousVideo = queryClient.getQueryData<VideoDetailResponse>(['videos', videoId]);
 
       // Build a new optimistic aggregate rating object
+      const isFirstTimeRater = !previousAgg?.currentUserRating;
       const totalCount = previousAgg?.totalRatingsCount ?? 0;
+      const newTotalCount = isFirstTimeRater ? totalCount + 1 : totalCount;
+
+      let newAverage: number;
+      if (!previousAgg?.averageRating) {
+        newAverage = rating;
+      } else if (isFirstTimeRater) {
+        // First time rating: add to the pool
+        newAverage = (previousAgg.averageRating * totalCount + rating) / newTotalCount;
+      } else {
+        // Updating existing rating: replace old with new
+        newAverage = (previousAgg.averageRating * totalCount - (previousAgg.currentUserRating || 0) + rating) / totalCount;
+      }
+
       const newAgg = previousAgg
         ? {
             ...previousAgg,
             currentUserRating: rating,
-            averageRating: previousAgg.averageRating
-              ? ((previousAgg.averageRating * totalCount - (previousAgg.currentUserRating || 0) + rating) / totalCount)
-              : rating,
+            averageRating: newAverage,
+            totalRatingsCount: newTotalCount,
           }
         : {
             videoId,
@@ -230,6 +243,7 @@ export const useSearchVideos = (params: SearchParams) => {
     queryKey: ['search', 'videos', params],
     queryFn: () => apiClient.searchVideos(params),
     enabled: !!params.query,
+    staleTime: CACHE_STRATEGY.SEARCH,
   });
 };
 
@@ -238,6 +252,7 @@ export const useTagSuggestions = (query: string, limit: number = 10) => {
     queryKey: ['tags', 'suggestions', query, limit],
     queryFn: () => apiClient.getTagSuggestions(query, limit),
     enabled: !!query && query.length > 0,
+    staleTime: CACHE_STRATEGY.TAGS,
   });
 };
 
@@ -247,6 +262,7 @@ export const useRelatedVideos = (videoId: string, limit: number = 5) => {
     queryKey: ['recommendations', 'related', videoId, limit],
     queryFn: () => apiClient.getRelatedVideos(videoId, limit),
     enabled: !!videoId,
+    staleTime: CACHE_STRATEGY.RECOMMENDATIONS,
   });
 };
 
@@ -271,8 +287,8 @@ export const useProfile = () => {
     queryKey: ['user', 'profile'],
     queryFn: () => apiClient.getProfile(),
     enabled: hasToken,
-    staleTime: Infinity,       // never become stale automatically
-    gcTime: Infinity,          // keep in cache for the entire session
+    staleTime: CACHE_STRATEGY.USER_PROFILE,
+    gcTime: CACHE_STRATEGY.USER_PROFILE,
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
   });
@@ -323,8 +339,9 @@ export const useRegister = () => {
 // Moderation hooks
 export const useGetModerationFlags = (status: "open" | "under_review" | "approved" | "rejected", page: number, pageSize: number) => {
   return useQuery({
-    queryKey: ['flags', status, page, pageSize],
+    queryKey: ['moderation', 'flags', 'list', status, page, pageSize],
     queryFn: () => apiClient.getModerationFlags(status, page, pageSize),
+    staleTime: CACHE_STRATEGY.MODERATION,
   });
 };
 
@@ -333,6 +350,7 @@ export const useGetFlagDetails = (flagId: string) => {
     queryKey: ['moderation', 'flags', flagId],
     queryFn: () => apiClient.getFlagDetails(flagId),
     enabled: !!flagId,
+    staleTime: CACHE_STRATEGY.MODERATION,
   });
 };
 
@@ -342,8 +360,7 @@ export const useActionFlag = (flagId: string) => {
     mutationFn: (data: { status: "open" | "under_review" | "approved" | "rejected"; moderatorNotes?: string }) =>
       apiClient.actionFlag(flagId, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['flags'] });
-      queryClient.invalidateQueries({ queryKey: ['flag', flagId] });
+      queryClient.invalidateQueries({ queryKey: ['moderation', 'flags'] });
     },
   });
 };
@@ -390,7 +407,46 @@ export const useUser = (userId: string) => {
     queryKey: ['user', 'public', userId],
     queryFn: () => apiClient.getUser(userId),
     enabled: !!userId,
-    staleTime: 1000 * 60 * 60, // 1 hour
+    staleTime: CACHE_STRATEGY.USER_PUBLIC,
   });
+};
+
+/**
+ * Prefetch multiple users in parallel to avoid N+1 queries in VideoCard.
+ * Returns a map of userId -> display name for easy lookup.
+ * Uses useQueries for proper React Query integration.
+ */
+export const useUserNames = (userIds: string[]) => {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+  // Memoize unique IDs to prevent unnecessary re-renders
+  const uniqueIds = useMemo(() => {
+    return [...new Set(userIds.filter(id => id && uuidRegex.test(id)))];
+  }, [userIds]);
+
+  const results = useQueries({
+    queries: uniqueIds.map(userId => ({
+      queryKey: ['user', 'public', userId],
+      queryFn: () => apiClient.getUser(userId),
+      staleTime: CACHE_STRATEGY.USER_PUBLIC,
+    })),
+  });
+
+  const isLoading = results.some(r => r.isLoading);
+  const isError = results.some(r => r.isError);
+
+  // Memoize the user map to prevent unnecessary re-renders
+  const userMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    results.forEach((result, index) => {
+      if (result.data) {
+        const user = result.data;
+        map[uniqueIds[index]] = `${user.firstName} ${user.lastName}`.trim();
+      }
+    });
+    return map;
+  }, [results, uniqueIds]);
+
+  return { userMap, isLoading, isError };
 };
 
