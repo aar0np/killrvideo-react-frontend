@@ -8,6 +8,8 @@ import { useSearchVideos, useUserNames } from '@/hooks/useApi';
 import SearchBar from '@/components/search/SearchBar';
 import { EducationalTooltip } from '@/components/educational/EducationalTooltip';
 
+const EMPTY_TAGS: string[] = [];
+
 const SearchResults = () => {
   const [searchParams] = useSearchParams();
   const query = searchParams.get('q') || '';
@@ -84,7 +86,7 @@ const SearchResults = () => {
                 duration="5:32"
                 views={video.viewCount}
                 rating={video.averageRating}
-                tags={[]}
+                tags={EMPTY_TAGS}
                 uploadDate={video.submittedAt}
               />
             ))}
