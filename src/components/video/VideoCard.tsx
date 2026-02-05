@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, memo } from 'react';
 import { Link } from 'react-router-dom';
 import { Clock, Eye, Star } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
@@ -20,7 +20,30 @@ interface VideoCardProps {
   creatorName?: string;
 }
 
-const VideoCard = ({
+const formatViews = (raw?: number | null) => {
+  const num = raw ?? 0;
+  if (num >= 1_000_000) return `${(num / 1_000_000).toFixed(1)}M`;
+  if (num >= 1_000) return `${(num / 1_000).toFixed(1)}K`;
+  return num.toString();
+};
+
+const getTimeAgo = (date: string) => {
+  if (!date) return '';
+  const uploadTime = new Date(date);
+  if (isNaN(uploadTime.getTime())) return '';
+
+  const now = new Date();
+  const diffTime = Math.abs(now.getTime() - uploadTime.getTime());
+  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+  if (diffDays === 0) return 'Today';
+  if (diffDays === 1) return '1 day ago';
+  if (diffDays < 7) return `${diffDays} days ago`;
+  if (diffDays < 30) return `${Math.ceil(diffDays / 7)} weeks ago`;
+  return `${Math.ceil(diffDays / 30)} months ago`;
+};
+
+const VideoCard = memo(({
   id,
   title,
   creator,
@@ -47,25 +70,6 @@ const VideoCard = ({
       : isUuid
         ? creator.substring(0, 8)
         : creator;
-
-  const formatViews = (raw?: number | null) => {
-    const num = raw ?? 0;
-    if (num >= 1_000_000) return `${(num / 1_000_000).toFixed(1)}M`;
-    if (num >= 1_000) return `${(num / 1_000).toFixed(1)}K`;
-    return num.toString();
-  };
-
-  const getTimeAgo = (date: string) => {
-    const now = new Date();
-    const uploadTime = new Date(date);
-    const diffTime = Math.abs(now.getTime() - uploadTime.getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
-    if (diffDays === 1) return '1 day ago';
-    if (diffDays < 7) return `${diffDays} days ago`;
-    if (diffDays < 30) return `${Math.ceil(diffDays / 7)} weeks ago`;
-    return `${Math.ceil(diffDays / 30)} months ago`;
-  };
 
   return (
     <Card className="group hover:shadow-lg transition-all duration-300 overflow-hidden bg-white border-gray-200 hover:border-primary/20">
@@ -137,6 +141,8 @@ const VideoCard = ({
       </CardContent>
     </Card>
   );
-};
+});
+
+VideoCard.displayName = 'VideoCard';
 
 export default VideoCard;

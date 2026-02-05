@@ -2,6 +2,8 @@ import { useRelatedVideos } from '@/hooks/useApi';
 import { EducationalTooltip } from '@/components/educational/EducationalTooltip';
 import VideoCard from './VideoCard';
 
+const EMPTY_TAGS: string[] = [];
+
 interface RelatedVideosProps {
   videoId: string;
   limit?: number;
@@ -32,7 +34,7 @@ const RelatedVideos = ({ videoId, limit = 5 }: RelatedVideosProps) => {
           duration=""
           views={item.views ?? 0}
           rating={item.averageRating ?? 0}
-          tags={[]}
+          tags={EMPTY_TAGS}
           uploadDate={item.uploadDate ?? ''}
         />
       ))}

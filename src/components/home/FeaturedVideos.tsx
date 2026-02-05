@@ -4,6 +4,7 @@ import { useLatestVideos, useUserNames } from '@/hooks/useApi';
 import { VideoSummary } from '@/types/api';
 
 const PLACEHOLDER_THUMB = 'https://via.placeholder.com/400x225';
+const EMPTY_TAGS: string[] = [];
 
 const FeaturedVideos = () => {
   const { data: videosResp, isLoading, error } = useLatestVideos(1, 5);
@@ -89,7 +90,7 @@ const FeaturedVideos = () => {
               duration=""
               views={video.views}
               rating={video.averageRating ?? 0}
-              tags={[]}
+              tags={EMPTY_TAGS}
               uploadDate={video.submittedAt}
             />
           ))}

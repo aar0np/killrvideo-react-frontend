@@ -7,6 +7,7 @@ import { TrendingUp } from 'lucide-react';
 import { useTrendingVideos, useUserNames } from '@/hooks/useApi';
 
 type TimePeriod = '1' | '7' | '30';
+const EMPTY_TAGS: string[] = [];
 
 const Trending = () => {
   const [timePeriod, setTimePeriod] = useState<TimePeriod>('1');
@@ -95,7 +96,7 @@ const Trending = () => {
                       duration="0:00"
                       views={video.viewCount}
                       rating={video.averageRating}
-                      tags={[]}
+                      tags={EMPTY_TAGS}
                       uploadDate={video.submittedAt}
                     />
                   </div>

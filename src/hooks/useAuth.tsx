@@ -1,7 +1,6 @@
-import { createContext, useContext, ReactNode } from 'react';
+import { createContext, useContext, ReactNode, useState, useEffect, useMemo, useCallback } from 'react';
 import { useProfile } from './useApi';
 import { User } from '@/types/api';
-import { useState, useEffect } from 'react';
 
 interface AuthContextType {
   user: User | null;
@@ -29,7 +28,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return () => window.removeEventListener('auth-change', handler);
   }, []);
 
-  const toggleGuidedTour = () => {
+  const toggleGuidedTour = useCallback(() => {
     setGuidedTourEnabled((prev) => {
       const newValue = !prev;
       if (typeof window !== 'undefined') {
@@ -37,28 +36,36 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
       return newValue;
     });
-  };
+  }, []);
 
   const { data: profile, isLoading } = useProfile();
   const token = (typeof window !== 'undefined') ? localStorage.getItem('auth_token') : null;
-  // Attempt to hydrate user from cache/localStorage for instant UI feedback
-  let initialUser: User | null = null;
-  if (typeof window !== 'undefined') {
-    const stored = localStorage.getItem('auth_user');
-    if (stored) {
-      try {
-        initialUser = JSON.parse(stored);
-      } catch {
-        // Ignore malformed JSON in localStorage
+
+  // Cache initial user from localStorage with stable reference (lazy init runs once)
+  const [cachedInitialUser] = useState<User | null>(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('auth_user');
+      if (stored) {
+        try {
+          return JSON.parse(stored);
+        } catch {
+          return null;
+        }
       }
     }
-  }
+    return null;
+  });
 
-  const user = token ? ((profile as User | null) ?? initialUser) : null;
+  const user = token ? ((profile as User | null) ?? cachedInitialUser) : null;
   const isAuthenticated = !!token && !!user;
 
+  const contextValue = useMemo(
+    () => ({ user, isLoading, isAuthenticated, guidedTourEnabled, toggleGuidedTour }),
+    [user, isLoading, isAuthenticated, guidedTourEnabled, toggleGuidedTour]
+  );
+
   return (
-    <AuthContext.Provider value={{ user, isLoading, isAuthenticated, guidedTourEnabled, toggleGuidedTour }}>
+    <AuthContext.Provider value={contextValue}>
       {children}
     </AuthContext.Provider>
   );
